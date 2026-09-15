@@ -14,27 +14,27 @@ An application that automatically generates multilingual narration for audio/vid
 
 ```
 multilingual-narration/
-├── web/                          # React.js web application
+├── web/                          
 │   ├── public/
 │   ├── src/
-│   │   ├── assets/                # images, icons, fonts
+│   │   ├── assets/                
 │   │   ├── components/
-│   │   │   ├── common/            # reusable UI elements (Button, Loader, Modal)
-│   │   │   ├── upload/            # UploadForm, ProgressBar
-│   │   │   └── player/            # AudioPlayer, SubtitleOverlay, LanguageSwitcher
-│   │   ├── pages/                 # route-level pages (Home, Upload, Result, History)
-│   │   ├── hooks/                 # custom hooks (useUploadFile, usePollingStatus)
-│   │   ├── services/              # API calls to backend
-│   │   ├── store/                 # global state (Zustand / Redux Toolkit)
-│   │   ├── i18n/                  # UI localization (react-i18next)
-│   │   ├── router/                # route configuration
+│   │   │   ├── common/            
+│   │   │   ├── upload/            
+│   │   │   └── player/            
+│   │   ├── pages/                 
+│   │   ├── hooks/                 
+│   │   ├── services/             
+│   │   ├── store/                 
+│   │   ├── i18n/             
+│   │   ├── router/           
 │   │   ├── App.jsx
 │   │   └── main.jsx
 │   ├── .env.example
 │   └── package.json
 │
-├── mobile/                       # React Native (Expo) application
-│   ├── app/                       # screens (Expo Router)
+├── mobile/                    
+│   ├── app/              
 │   ├── components/
 │   ├── hooks/
 │   ├── services/
@@ -43,29 +43,29 @@ multilingual-narration/
 │   ├── app.json
 │   └── package.json
 │
-├── shared/                       # code shared between web and mobile
-│   ├── types/                     # TypeScript types/interfaces
-│   ├── constants/                 # supported languages, error codes, config
-│   ├── utils/                     # pure helper functions
-│   └── api/                       # endpoint definitions and request/response contracts
+├── shared/                     
+│   ├── types/                
+│   ├── constants/                
+│   ├── utils/                 
+│   └── api/                   
 │
-├── functions/                    # minimal backend layer
+├── functions/                 
 │   ├── src/
 │   │   ├── index.ts
-│   │   ├── handlers/              # uploadHandler, transcribeHandler, translateHandler, ttsHandler
-│   │   ├── services/               # third-party API wrappers
+│   │   ├── handlers/           
+│   │   ├── services/             
 │   │   └── config/
 │   └── package.json
 │
-├── docs/                         # project documentation
-│   ├── prd.md                     # product requirements
-│   ├── architecture.md            # system architecture and data flow
-│   ├── api-contract.md            # API request/response contracts
-│   └── demo-script.md             # demo walkthrough script
+├── docs/                        
+│   ├── prd.md                   
+│   ├── architecture.md          
+│   ├── api-contract.md        
+│   └── demo-script.md         
 │
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                 # lint, type-check, build check
+│       └── ci.yml          
 │
 ├── .gitignore
 └── README.md
@@ -81,5 +81,6 @@ multilingual-narration/
 | functions/ | Thin backend layer that calls third-party AI services (STT, translation, TTS) and returns results |
 | docs/ | All project documentation, kept up to date throughout development |
 | .github/workflows/ | Continuous integration pipeline, runs on every pull request |
+
 
 
