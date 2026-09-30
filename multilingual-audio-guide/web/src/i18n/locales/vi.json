@@ -1,0 +1,35 @@
+{
+  "app": { "title": "Cổng quản trị - Thuyết minh địa danh" },
+  "login": {
+    "title": "Đăng nhập",
+    "subtitle": "Dành cho Manager và Admin",
+    "unfid": "UNFID",
+    "password": "Mật khẩu",
+    "submit": "Đăng nhập",
+    "submitting": "Đang đăng nhập...",
+    "sessionExpired": "Phiên làm việc đã hết hạn do không hoạt động. Vui lòng đăng nhập lại.",
+    "errors": {
+      "REQUIRED": "Trường này là bắt buộc.",
+      "UNFID_NOT_FOUND": "Không tìm thấy UNFID này.",
+      "WRONG_PASSWORD": "Mật khẩu không đúng.",
+      "INVALID_REQUEST": "Vui lòng nhập đầy đủ UNFID và mật khẩu.",
+      "INTERNAL_ERROR": "Không thể kết nối tới máy chủ. Vui lòng thử lại sau."
+    }
+  },
+  "home": {
+    "welcome": "Xin chào, {{name}}",
+    "userType": "Vai trò",
+    "features": "Chức năng của bạn"
+  },
+  "userTypes": { "ADMIN": "Quản trị viên", "MANAGER": "Người quản lý" },
+  "features": {
+    "EDIT_PLACE_INFO": "Chỉnh sửa thông tin địa danh",
+    "MANAGE_AUDIO": "Xoá / thay đổi audio",
+    "LISTEN_MANAGEMENT": "Quản lý lượt nghe",
+    "MANAGER_ACCOUNT_MANAGEMENT": "Quản lý tài khoản Manager",
+    "PLACES_MANAGEMENT": "Quản lý địa danh",
+    "MAP_MANAGEMENT": "Quản lý bản đồ",
+    "BUS_LINE_MANAGEMENT": "Quản lý tuyến xe buýt",
+    "LOG_OFF": "Đăng xuất"
+  }
+}

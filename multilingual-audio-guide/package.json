@@ -4,14 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite web",
+    "build": "vite build web",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview web",
+    "dev:api": "node functions/src/dev-server.js",
+    "test": "node --test \"functions/src/**/*.test.js\""
   },
   "dependencies": {
+    "i18next": "^26.4.2",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.15",
+    "react-router-dom": "^7.18.4",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -1,0 +1,35 @@
+{
+  "app": { "title": "Administration Portal - Multilingual Audio Guide" },
+  "login": {
+    "title": "Log in",
+    "subtitle": "For Managers and Admins",
+    "unfid": "UNFID",
+    "password": "Password",
+    "submit": "Log in",
+    "submitting": "Logging in...",
+    "sessionExpired": "Your session timed out due to inactivity. Please log in again.",
+    "errors": {
+      "REQUIRED": "This field is required.",
+      "UNFID_NOT_FOUND": "This UNFID cannot be found.",
+      "WRONG_PASSWORD": "Your password is incorrect.",
+      "INVALID_REQUEST": "Please enter both UNFID and password.",
+      "INTERNAL_ERROR": "Cannot reach the server. Please try again later."
+    }
+  },
+  "home": {
+    "welcome": "Welcome, {{name}}",
+    "userType": "Role",
+    "features": "Your features"
+  },
+  "userTypes": { "ADMIN": "Admin", "MANAGER": "Manager" },
+  "features": {
+    "EDIT_PLACE_INFO": "Edit place's information",
+    "MANAGE_AUDIO": "Delete / change audio",
+    "LISTEN_MANAGEMENT": "Listen Management",
+    "MANAGER_ACCOUNT_MANAGEMENT": "Manager account Management",
+    "PLACES_MANAGEMENT": "Places Management",
+    "MAP_MANAGEMENT": "Map Management",
+    "BUS_LINE_MANAGEMENT": "Bus Line Management",
+    "LOG_OFF": "Log Off"
+  }
+}
