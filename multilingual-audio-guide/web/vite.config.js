@@ -10,6 +10,6 @@ export default defineConfig({
   },
   server: {
     fs: { allow: ['..'] }, // cho phép import thư mục shared/ nằm ngoài web/
-    proxy: { '/api': 'http://localhost:5001' }, // dev-api (functions/src/dev-server.js)
+    proxy: { '/api': 'http://127.0.0.1:5001' }, // dev-api (functions/src/dev-server.js)
   },
 })

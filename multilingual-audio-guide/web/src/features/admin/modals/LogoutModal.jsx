@@ -1,15 +1,17 @@
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '../AdminContext';
 import Modal from '../components/Modal';
+import { useAppStore } from '../../../store/useAppStore';
 
 export default function LogoutModal() {
   const { closeModal } = useAdmin();
   const navigate = useNavigate();
+  const logout = useAppStore((state) => state.logout);
 
   const confirm = () => {
-    // TODO: xóa phiên đăng nhập (token/session) ở đây khi đã có xác thực thật
+    logout();
     closeModal();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -30,7 +32,7 @@ export default function LogoutModal() {
       }
     >
       <p style={{ fontSize: 12, lineHeight: 1.7, color: 'var(--muted)' }}>
-        Hệ thống hiện chưa có xác thực thật; xác nhận sẽ đưa bạn về trang đăng nhập.
+        Phiên đăng nhập hiện tại sẽ kết thúc và bạn sẽ được đưa về trang đăng nhập.
       </p>
     </Modal>
   );

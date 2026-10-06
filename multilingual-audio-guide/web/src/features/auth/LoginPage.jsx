@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { AUTH_ERROR_CODES } from '@shared/constants/auth.js';
+import { USER_TYPES } from '@shared/constants/roles.js';
+import { ApiError, login } from '../../services/api';
+import { useAppStore } from '../../store/useAppStore';
 import './login.css';
 
 const STORAGE_KEY = 'saigonGuideUsername';
@@ -34,16 +38,54 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(Boolean(saved));
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const startSession = useAppStore((state) => state.startSession);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    writeSavedUsername(username.trim(), remember);
+    setMessage('');
+    setIsSubmitting(true);
 
-    // TODO: gọi API xác thực (web/src/services) rồi điều hướng theo vai trò:
-    //   admin -> /admin, manager -> /manager
-    setMessage(
-      'Giao diện đăng nhập đã sẵn sàng. Chức năng xác thực và điều hướng đến trang Admin/Manager sẽ được kết nối khi các trang quản trị hoàn thành.',
-    );
+    try {
+      const session = await login({
+        unfid: username.trim(),
+        password,
+      });
+
+      writeSavedUsername(username.trim(), remember);
+
+      const userType = session?.user?.userType;
+      if (!session?.token || !session?.expiresAt || !Object.values(USER_TYPES).includes(userType)) {
+        setMessage('Máy chủ trả về thông tin phiên không hợp lệ. Vui lòng thử lại sau.');
+        return;
+      }
+
+      startSession(session);
+      navigate(userType === USER_TYPES.ADMIN ? '/admin' : '/', { replace: true });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (
+          [AUTH_ERROR_CODES.UNFID_NOT_FOUND, AUTH_ERROR_CODES.WRONG_PASSWORD].includes(error.code)
+        ) {
+          setMessage('Mã tài khoản hoặc mật khẩu không đúng.');
+        } else if (error.status === 0) {
+          setMessage('Không kết nối được máy chủ đăng nhập. Hãy chạy npm run dev:api rồi thử lại.');
+        } else if (error.status >= 500) {
+          console.error('Login API returned an error:', error.code, error.status);
+          setMessage(`Máy chủ đăng nhập gặp lỗi (HTTP ${error.status}, ${error.code}). Hãy kiểm tra terminal chạy API.`);
+        } else {
+          console.error('Login API rejected the request:', error.code, error.status);
+          setMessage(`Đăng nhập thất bại (HTTP ${error.status}, ${error.code}).`);
+        }
+      } else {
+        console.error('Unexpected login error:', error);
+        const details = error instanceof Error ? error.message : String(error);
+        setMessage(`Lỗi ứng dụng khi đăng nhập: ${details}. Hãy kiểm tra Console của trình duyệt.`);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -93,12 +135,12 @@ export default function LoginPage() {
           </div>
           <form onSubmit={handleSubmit}>
             <div className="field">
-              <label htmlFor="username">Tên tài khoản</label>
+              <label htmlFor="username">Mã tài khoản (UNFID)</label>
               <input
                 id="username"
                 name="username"
                 autoComplete="username"
-                placeholder="Nhập tên tài khoản"
+                placeholder="Nhập mã tài khoản"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -129,18 +171,18 @@ export default function LoginPage() {
                 tài khoản
               </label>
             </div>
-            <button className="submit" type="submit">
+            <button className="submit" type="submit" disabled={isSubmitting}>
               Đăng nhập <span aria-hidden="true">→</span>
             </button>
-            <div className={'message' + (message ? ' success' : '')} role="status" aria-live="polite">
+            <div className={'message' + (message ? ' error' : '')} role="status" aria-live="polite">
               {message}
             </div>
           </form>
           <div className="demo">
             <div className="demo-title">LƯU Ý</div>
             <p>
-              Giao diện đăng nhập hiện là bản thiết kế UI. Trang quản trị Admin/Manager và xác thực tài khoản sẽ được
-              tích hợp sau.
+              Tài khoản thử nghiệm khi chạy máy chủ phát triển: <code>ADMIN001</code> / <code>Admin@123</code>.
+              Đây là tài khoản dev, không dùng trên môi trường thật.
             </p>
           </div>
           <Link to="/" className="back-link">

@@ -1,5 +1,7 @@
 import { useCallback } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { USER_TYPES } from '@shared/constants/roles.js'
+import AdminRoutes from '../features/admin/AdminRoutes'
 import LoginPage from '../features/auth/LoginPage'
 import RequireAuth from '../features/auth/RequireAuth'
 import Home from '../pages/Home'
@@ -30,6 +32,14 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/admin/*"
+          element={
+            <RequireAuth userType={USER_TYPES.ADMIN}>
+              <AdminRoutes />
+            </RequireAuth>
+          }
+        />
         <Route
           path="/"
           element={
