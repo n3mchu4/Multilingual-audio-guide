@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Saigon Guide",
+    "slug": "saigon-guide-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "backgroundColor": "#167d78"
+      }
+    }
+  }
+}
