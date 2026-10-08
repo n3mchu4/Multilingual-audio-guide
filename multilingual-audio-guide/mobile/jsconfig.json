@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "jsx": "react-native",
+    "moduleResolution": "bundler"
+  },
+  "exclude": ["node_modules"]
+}
