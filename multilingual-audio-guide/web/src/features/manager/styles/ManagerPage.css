@@ -1,0 +1,579 @@
+/* CSS gốc được giới hạn trong wrapper của trang, không áp dụng lên body/:root. */
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap");
+
+.sg-manager {
+  --teal: #167d78;
+  --teal-dark: #105f5b;
+  --teal-light: #e8f5f2;
+  --ink: #17212b;
+  --muted: #65717d;
+  --line: #e5e9ec;
+  --bg: #f7f8f6;
+  --white: #fff;
+  --danger: #d93025;
+  --danger-bg: #fce8e6;
+  --success: #188038;
+  --success-bg: #e6f4ea;
+  --warning: #b06000;
+  --warning-bg: #fef7e0;
+}
+
+.sg-manager,
+.sg-manager * {
+  box-sizing: border-box;
+}
+.sg-manager {
+  margin: 0;
+  min-height: 100vh;
+  font-family:
+    Montserrat,
+    Inter,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background: linear-gradient(135deg, #f5faf8 0%, #edf6f3 55%, #e3f0ec 100%);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.sg-manager .shell {
+  width: min(100%, 1050px);
+  min-height: 720px;
+  background: var(--white);
+  border: 1px solid rgba(22, 125, 120, 0.15);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(31, 75, 69, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.sg-manager .hidden {
+  display: none !important;
+}
+
+/* HEADER */
+.sg-manager .dash-header {
+  background: linear-gradient(145deg, #167d78, #105f5b);
+  color: #fff;
+  padding: 20px 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sg-manager .user-details h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+.sg-manager .user-details p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #cbf2ea;
+}
+
+.sg-manager .spot-selector {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  outline: none;
+}
+.sg-manager .spot-selector option {
+  color: var(--ink);
+}
+
+/* TABS */
+.sg-manager .nav-tabs {
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  padding: 0 36px;
+  display: flex;
+  gap: 12px;
+}
+.sg-manager .tab-btn {
+  border: 0;
+  background: transparent;
+  padding: 16px 20px;
+  font-size: 13.5px;
+  font-weight: 750;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.sg-manager .tab-btn.active {
+  color: var(--teal);
+  border-bottom-color: var(--teal);
+}
+
+/* BODY DASHBOARD */
+.sg-manager .dash-body {
+  padding: 28px 36px;
+  flex: 1;
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+/* KHỐI BỐ CỤC ĐỒNG BỘ GIAO DIỆN KHÁCH XEM (SCROLL LAYOUT) */
+.sg-manager .user-sync-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* 1. HERO BANNER */
+.sg-manager .hero-detail {
+  height: 280px;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  background: #d5e2de;
+  border: 1px solid var(--line);
+}
+.sg-manager .hero-detail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sg-manager .hero-detail:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(16, 31, 33, 0.2) 0%,
+    rgba(16, 31, 33, 0.85) 100%
+  );
+}
+.sg-manager .hero-text {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  color: white;
+}
+.sg-manager .hero-text h1 {
+  font-family: Montserrat, sans-serif;
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.15);
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.95);
+  margin: 0;
+}
+.sg-manager .hero-text p {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sg-manager .hero-change-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--teal-dark);
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* 2. KHỐI CỐ ĐỊNH TỌA ĐỘ / ĐỊA CHỈ (ĐÃ BỎ KHÓA & BÚT) */
+.sg-manager .info-readonly-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.sg-manager .info-readonly-card .field-group label {
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
+}
+.sg-manager .info-readonly-card .field-group input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  background: #f4f7f6;
+  color: #526066;
+  outline: none;
+}
+
+/* 3. KHỐI THUYẾT MINH AUDIO & NỘI DUNG */
+.sg-manager .detail-section {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px;
+}
+.sg-manager .section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.sg-manager .section-head h2 {
+  font-size: 16px;
+  margin: 0;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+.sg-manager .section-head span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.sg-manager .audio-player-box {
+  background: #f5f9f8;
+  border: 1px solid #e1efec;
+  border-radius: 13px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sg-manager .play-button {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #fff;
+  font-size: 15px;
+  display: grid;
+  place-items: center;
+}
+.sg-manager .audio-info {
+  flex: 1;
+  min-width: 0;
+}
+.sg-manager .audio-info strong {
+  display: block;
+  font-size: 12px;
+}
+.sg-manager .audio-info small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.sg-manager .audio-upload-bar {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.sg-manager textarea.transcript-editor {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: #fcfdfe;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+.sg-manager textarea.transcript-editor:focus {
+  border-color: var(--teal);
+  background: #fff;
+}
+
+/* 4. GALLERY KHOẢNH KHẮC NỔI BẬT */
+.sg-manager .gallery {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.sg-manager .gallery-card {
+  position: relative;
+  aspect-ratio: 1/1;
+  width: 160px;
+  flex: 0 0 160px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #dbe5e1;
+  border: 1px solid var(--line);
+}
+.sg-manager .gallery-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sg-manager .gallery-card-btn {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 0;
+  border-radius: 6px;
+  padding: 4px;
+  font-size: 10px;
+  font-weight: 750;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: center;
+}
+
+/* ACTION BAR BUTTONS */
+.sg-manager .action-bar {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+}
+.sg-manager .btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.sg-manager .btn-secondary {
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.sg-manager .btn-secondary:hover {
+  background: #f0f5f4;
+  color: var(--ink);
+}
+.sg-manager .btn-preview {
+  background: #e8f5f2;
+  color: var(--teal-dark);
+  border: 1px solid #bce2d9;
+}
+.sg-manager .btn-preview:hover {
+  background: #d4efe8;
+}
+.sg-manager .btn-primary {
+  background: var(--teal);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(22, 125, 120, 0.25);
+}
+.sg-manager .btn-primary:hover {
+  background: var(--teal-dark);
+}
+
+/* TAB HISTORY TABLE */
+.sg-manager .history-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.sg-manager .history-table th,
+.sg-manager .history-table td {
+  padding: 14px 18px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line);
+}
+.sg-manager .history-table th {
+  background: #f0f6f4;
+  color: var(--teal-dark);
+  font-weight: 800;
+}
+.sg-manager .badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.sg-manager .badge-pending {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.sg-manager .badge-approved {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.sg-manager .badge-rejected {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* MODAL PREVIEW USER VIEW */
+.sg-manager .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 33, 33, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 20px;
+}
+.sg-manager .modal-card {
+  width: min(100%, 420px);
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 24px;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+.sg-manager .modal-header {
+  padding: 14px 18px;
+  background: var(--teal);
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sg-manager .modal-header h4 {
+  margin: 0;
+  font-size: 14px;
+}
+.sg-manager .close-modal {
+  border: 0;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+}
+.sg-manager .modal-body {
+  padding: 18px;
+}
+
+.sg-manager {
+  width: 100%;
+  text-align: left;
+}
+.sg-manager .manager-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.sg-manager .manager-message {
+  padding: 12px;
+  border: 1px solid var(--teal);
+  background: var(--teal-light);
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.sg-manager .history-scroll {
+  overflow-x: auto;
+}
+.sg-manager audio {
+  width: 100%;
+}
+.sg-manager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 600px) {
+  .sg-manager {
+    padding: 10px;
+  }
+  .sg-manager .shell {
+    border-radius: 18px;
+  }
+  .sg-manager .dash-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 24px 20px;
+  }
+  .sg-manager .header-right,
+  .sg-manager .spot-selector {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .sg-manager .dash-body {
+    padding: 16px;
+  }
+  .sg-manager .nav-tabs {
+    gap: 0;
+    padding: 0 8px;
+  }
+  .sg-manager .tab-btn {
+    padding: 14px 8px;
+    font-size: 11px;
+  }
+  .sg-manager .hero-text h1 {
+    font-size: 32px;
+    overflow-wrap: anywhere;
+  }
+  .sg-manager .info-readonly-card {
+    grid-template-columns: 1fr;
+  }
+  .sg-manager .detail-section {
+    padding: 16px;
+  }
+  .sg-manager .section-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sg-manager .section-head h2 {
+    font-size: 15px;
+  }
+  .sg-manager .audio-upload-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .sg-manager .audio-upload-bar input {
+    width: 100%;
+    min-width: 0;
+  }
+  .sg-manager .action-bar {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .sg-manager .action-bar .btn {
+    width: 100%;
+  }
+  .sg-manager .modal-overlay {
+    padding: 12px;
+  }
+}
