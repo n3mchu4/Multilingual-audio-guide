@@ -1,0 +1,19 @@
+{
+  "name": "saigon-guide-db-erd",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node node/check-db.js",
+    "demo:api": "node node/demo-api.js",
+    "import:text": "node node/import-transcript.js",
+    "set:media": "node node/set-media.js",
+    "create:admin": "node node/create-admin.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1"
+  },
+  "engines": { "node": ">=20" }
+}

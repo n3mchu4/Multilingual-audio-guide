@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+data/
+logs/*
+!logs/.gitkeep
+backups/*
+!backups/.gitkeep
+node_modules/
+storage/images/*
+!storage/images/.gitkeep
+storage/audio/*
+!storage/audio/.gitkeep
