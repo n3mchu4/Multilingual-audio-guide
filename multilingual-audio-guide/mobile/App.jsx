@@ -17,7 +17,7 @@ import { places, words, mapPoints, userGps } from "./services/mobileData";
 const C = {
   ink: "#17212b",
   muted: "#65717d",
-  teal: "#167d78",
+  pink: "#d63384",
   soft: "#e9f4f2",
   line: "#e5e9ec",
   cream: "#f7f8f6",
@@ -411,11 +411,11 @@ export default function App() {
                 style={styles.secondarySmall}
                 onPress={() => setBusVisible((value) => !value)}
               >
-                <Text style={styles.tealText}>🚌 {tr("busConnect")}</Text>
+                <Text style={styles.pinkText}>🚌 {tr("busConnect")}</Text>
               </Pressable>
               {navigating && (
                 <Pressable style={styles.secondarySmall} onPress={closePanel}>
-                  <Text style={styles.tealText}>✕ {tr("exitNav")}</Text>
+                  <Text style={styles.pinkText}>✕ {tr("exitNav")}</Text>
                 </Pressable>
               )}
             </View>
@@ -442,7 +442,7 @@ export default function App() {
               ⌖ {p.time} · {tr("walking")}
             </Text>
             <Text style={styles.paragraph}>{p.desc[lang]}</Text>
-            <Text style={styles.tealText}>{tr("readMore")}</Text>
+            <Text style={styles.pinkText}>{tr("readMore")}</Text>
           </View>
         </Pressable>
       ))}
@@ -469,7 +469,7 @@ export default function App() {
         ))}
       </ScrollView>
       <Pressable onPress={() => showPage("home")} style={styles.back}>
-        <Text style={styles.tealText}>← {tr("backHome")}</Text>
+        <Text style={styles.pinkText}>← {tr("backHome")}</Text>
       </Pressable>
       <ImageBackground
         source={photo(place.image)}
@@ -606,7 +606,7 @@ export default function App() {
                 </Text>
               </View>
               <Pressable onPress={() => showPage("detail")}>
-                <Text style={styles.tealText}>
+                <Text style={styles.pinkText}>
                   {lang === "vi" ? "Mở ↗" : "Open ↗"}
                 </Text>
               </Pressable>
@@ -663,12 +663,12 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 1,
   },
-  language: { color: C.teal, fontWeight: "800", fontSize: 12 },
+  language: { color: C.pink, fontWeight: "800", fontSize: 12 },
   screen: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   welcomeBody: { flexGrow: 1, backgroundColor: "#fff" },
   welcomeHero: { minHeight: 310, padding: 25, justifyContent: "space-between" },
-  welcomeImage: { backgroundColor: C.teal },
+  welcomeImage: { backgroundColor: C.pink },
   heroShade: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(9,34,35,.56)",
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 2,
-    color: "#d2fff1",
+    color: "#ffe3ef",
   },
   welcomeHeadline: {
     fontSize: 32,
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
   welcomeSummary: { fontSize: 13, lineHeight: 21, color: "#fff", marginTop: 8 },
   welcomeForm: { flex: 1, padding: 25 },
   eyebrow: {
-    color: C.teal,
+    color: C.pink,
     fontSize: 10,
     letterSpacing: 1.7,
     fontWeight: "900",
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
     fontFamily: Platform.select({ ios: "Georgia", android: "serif" }),
     fontSize: 22,
     fontStyle: "italic",
-    color: C.teal,
+    color: C.pink,
     marginTop: 5,
   },
   paragraph: { fontSize: 13, lineHeight: 21, color: C.muted, marginTop: 9 },
@@ -710,13 +710,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginTop: 10,
   },
-  choiceSelected: { borderColor: C.teal, backgroundColor: "#eef9f6" },
+  choiceSelected: { borderColor: C.pink, backgroundColor: "#fce7f3" },
   choiceText: { fontSize: 13, color: C.ink, fontWeight: "700" },
-  choiceTextSelected: { color: C.teal },
+  choiceTextSelected: { color: C.pink },
   primary: {
     borderRadius: 12,
     padding: 16,
-    backgroundColor: C.teal,
+    backgroundColor: C.pink,
     alignItems: "center",
     marginTop: 20,
   },
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: C.line,
   },
-  mapViewport: { height: 360, backgroundColor: "#e8eee9", overflow: "hidden" },
+  mapViewport: { height: 360, backgroundColor: "#fff0f6", overflow: "hidden" },
   mapLayer: { flex: 1 },
   mapRiver: {
     position: "absolute",
@@ -768,13 +768,13 @@ const styles = StyleSheet.create({
     width: "150%",
     backgroundColor: "#fff",
   },
-  routeLine: { position: "absolute", backgroundColor: "#1a73e8", zIndex: 2 },
+  routeLine: { position: "absolute", backgroundColor: "#d63384", zIndex: 2 },
   userDot: {
     position: "absolute",
     width: 17,
     height: 17,
     borderRadius: 10,
-    backgroundColor: "#1a73e8",
+    backgroundColor: "#d63384",
     borderWidth: 3,
     borderColor: "#fff",
     zIndex: 3,
@@ -787,17 +787,17 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#dae6e2",
+    borderColor: "#f4d9e5",
     backgroundColor: "#fff",
     zIndex: 4,
     maxWidth: 152,
   },
-  mapPinSelected: { borderWidth: 2, borderColor: C.teal },
+  mapPinSelected: { borderWidth: 2, borderColor: C.pink },
   pinDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: C.teal,
+    backgroundColor: C.pink,
     marginRight: 4,
   },
   mapPinText: { fontSize: 9, color: C.ink, fontWeight: "700", flexShrink: 1 },
@@ -822,10 +822,10 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 15, fontWeight: "800", color: C.ink },
   close: { fontSize: 17, color: C.muted, padding: 6 },
   actionButtons: { flexDirection: "row", gap: 8, marginTop: 13 },
-  primarySmall: { padding: 11, backgroundColor: C.teal, borderRadius: 10 },
+  primarySmall: { padding: 11, backgroundColor: C.pink, borderRadius: 10 },
   secondarySmall: { padding: 10, backgroundColor: C.soft, borderRadius: 10 },
   whiteText: { color: "#fff", fontSize: 12, fontWeight: "800" },
-  tealText: { color: C.teal, fontSize: 12, fontWeight: "800" },
+  pinkText: { color: C.pink, fontSize: 12, fontWeight: "800" },
   busInfo: {
     marginTop: 12,
     padding: 10,
@@ -843,7 +843,7 @@ const styles = StyleSheet.create({
     borderColor: C.line,
     overflow: "hidden",
   },
-  placePhoto: { width: "100%", height: 170, backgroundColor: "#dce7e2" },
+  placePhoto: { width: "100%", height: 170, backgroundColor: "#f4d9e5" },
   placeCopy: { padding: 16 },
   placeTitle: { fontSize: 19, color: C.ink, fontWeight: "900" },
   meta: { color: C.muted, fontSize: 10, marginTop: 5 },
@@ -859,7 +859,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     overflow: "hidden",
     borderRadius: 16,
-    backgroundColor: "#dce7e2",
+    backgroundColor: "#f4d9e5",
   },
   detailHeroImage: { borderRadius: 16 },
   detailHeroCopy: { padding: 20 },
@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     marginVertical: 13,
-    backgroundColor: "#f5f9f8",
+    backgroundColor: "#fff5f9",
     padding: 10,
     borderRadius: 11,
   },
@@ -891,22 +891,22 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 22,
-    backgroundColor: C.teal,
+    backgroundColor: C.pink,
     alignItems: "center",
     justifyContent: "center",
   },
   progress: {
     height: 4,
-    backgroundColor: "#d8e5e2",
+    backgroundColor: "#f4d9e5",
     marginTop: 8,
     borderRadius: 3,
   },
-  progressFilled: { height: 4, backgroundColor: C.teal, borderRadius: 3 },
+  progressFilled: { height: 4, backgroundColor: C.pink, borderRadius: 3 },
   galleryPhoto: {
     width: 145,
     height: 145,
     marginRight: 10,
-    backgroundColor: "#dce7e2",
+    backgroundColor: "#f4d9e5",
     borderRadius: 12,
   },
   miniPlayer: {
@@ -928,6 +928,6 @@ const styles = StyleSheet.create({
   navItem: { flex: 1, justifyContent: "center", alignItems: "center" },
   navIcon: { fontSize: 18 },
   navText: { fontSize: 10, color: C.muted, fontWeight: "700" },
-  navActive: { color: C.teal },
+  navActive: { color: C.pink },
   footer: { textAlign: "center", color: "#8a9698", fontSize: 9, padding: 18 },
 });

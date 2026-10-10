@@ -1,10 +1,10 @@
-/* CSS gốc được giới hạn trong wrapper của trang, không áp dụng lên body/:root. */
+﻿/* CSS gá»‘c Ä‘Æ°á»£c giá»›i háº¡n trong wrapper cá»§a trang, khÃ´ng Ã¡p dá»¥ng lÃªn body/:root. */
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap");
 
 .sg-manager {
-  --teal: #167d78;
-  --teal-dark: #105f5b;
-  --teal-light: #e8f5f2;
+  --pink: #d63384;
+  --pink-dark: #ad1f63;
+  --pink-light: #fce7f3;
   --ink: #17212b;
   --muted: #65717d;
   --line: #e5e9ec;
@@ -31,7 +31,7 @@
     system-ui,
     -apple-system,
     sans-serif;
-  background: linear-gradient(135deg, #f5faf8 0%, #edf6f3 55%, #e3f0ec 100%);
+  background: linear-gradient(135deg, #fff5f9 0%, #fff0f6 55%, #fde7f0 100%);
   color: var(--ink);
   display: flex;
   align-items: center;
@@ -43,10 +43,10 @@
   width: min(100%, 1050px);
   min-height: 720px;
   background: var(--white);
-  border: 1px solid rgba(22, 125, 120, 0.15);
+  border: 1px solid rgba(214, 51, 132, 0.15);
   border-radius: 28px;
   overflow: hidden;
-  box-shadow: 0 24px 70px rgba(31, 75, 69, 0.12);
+  box-shadow: 0 24px 70px rgba(94, 24, 55, 0.12);
   display: flex;
   flex-direction: column;
 }
@@ -57,7 +57,7 @@
 
 /* HEADER */
 .sg-manager .dash-header {
-  background: linear-gradient(145deg, #167d78, #105f5b);
+  background: linear-gradient(145deg, #d63384, #ad1f63);
   color: #fff;
   padding: 20px 36px;
   display: flex;
@@ -72,7 +72,7 @@
 .sg-manager .user-details p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: #cbf2ea;
+  color: #ffe3ef;
 }
 
 .sg-manager .spot-selector {
@@ -108,8 +108,8 @@
   transition: 0.2s;
 }
 .sg-manager .tab-btn.active {
-  color: var(--teal);
-  border-bottom-color: var(--teal);
+  color: var(--pink);
+  border-bottom-color: var(--pink);
 }
 
 /* BODY DASHBOARD */
@@ -120,7 +120,7 @@
   overflow-y: auto;
 }
 
-/* KHỐI BỐ CỤC ĐỒNG BỘ GIAO DIỆN KHÁCH XEM (SCROLL LAYOUT) */
+/* KHá»I Bá» Cá»¤C Äá»’NG Bá»˜ GIAO DIá»†N KHÃCH XEM (SCROLL LAYOUT) */
 .sg-manager .user-sync-container {
   display: flex;
   flex-direction: column;
@@ -187,7 +187,7 @@
   right: 14px;
   z-index: 3;
   background: rgba(255, 255, 255, 0.9);
-  color: var(--teal-dark);
+  color: var(--pink-dark);
   border: 0;
   border-radius: 8px;
   padding: 8px 14px;
@@ -196,7 +196,7 @@
   cursor: pointer;
 }
 
-/* 2. KHỐI CỐ ĐỊNH TỌA ĐỘ / ĐỊA CHỈ (ĐÃ BỎ KHÓA & BÚT) */
+/* 2. KHá»I Cá» Äá»ŠNH Tá»ŒA Äá»˜ / Äá»ŠA CHá»ˆ (ÄÃƒ Bá»Ž KHÃ“A & BÃšT) */
 .sg-manager .info-readonly-card {
   background: #fff;
   border: 1px solid var(--line);
@@ -224,7 +224,7 @@
   outline: none;
 }
 
-/* 3. KHỐI THUYẾT MINH AUDIO & NỘI DUNG */
+/* 3. KHá»I THUYáº¾T MINH AUDIO & Ná»˜I DUNG */
 .sg-manager .detail-section {
   background: #fff;
   border: 1px solid var(--line);
@@ -249,8 +249,8 @@
 }
 
 .sg-manager .audio-player-box {
-  background: #f5f9f8;
-  border: 1px solid #e1efec;
+  background: #fff5f9;
+  border: 1px solid #f9d8e7;
   border-radius: 13px;
   padding: 14px;
   display: flex;
@@ -263,7 +263,7 @@
   flex-shrink: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--teal);
+  background: var(--pink);
   color: #fff;
   font-size: 15px;
   display: grid;
@@ -308,11 +308,11 @@
   resize: vertical;
 }
 .sg-manager textarea.transcript-editor:focus {
-  border-color: var(--teal);
+  border-color: var(--pink);
   background: #fff;
 }
 
-/* 4. GALLERY KHOẢNH KHẮC NỔI BẬT */
+/* 4. GALLERY KHOáº¢NH KHáº®C Ná»”I Báº¬T */
 .sg-manager .gallery {
   display: flex;
   gap: 12px;
@@ -326,7 +326,7 @@
   flex: 0 0 160px;
   border-radius: 14px;
   overflow: hidden;
-  background: #dbe5e1;
+  background: #f4d9e5;
   border: 1px solid var(--line);
 }
 .sg-manager .gallery-card img {
@@ -377,20 +377,20 @@
   color: var(--ink);
 }
 .sg-manager .btn-preview {
-  background: #e8f5f2;
-  color: var(--teal-dark);
-  border: 1px solid #bce2d9;
+  background: #fce7f3;
+  color: var(--pink-dark);
+  border: 1px solid #f4b8d0;
 }
 .sg-manager .btn-preview:hover {
-  background: #d4efe8;
+  background: #f8d4e4;
 }
 .sg-manager .btn-primary {
-  background: var(--teal);
+  background: var(--pink);
   color: #fff;
-  box-shadow: 0 6px 16px rgba(22, 125, 120, 0.25);
+  box-shadow: 0 6px 16px rgba(214, 51, 132, 0.25);
 }
 .sg-manager .btn-primary:hover {
-  background: var(--teal-dark);
+  background: var(--pink-dark);
 }
 
 /* TAB HISTORY TABLE */
@@ -410,8 +410,8 @@
   border-bottom: 1px solid var(--line);
 }
 .sg-manager .history-table th {
-  background: #f0f6f4;
-  color: var(--teal-dark);
+  background: #fdf0f6;
+  color: var(--pink-dark);
   font-weight: 800;
 }
 .sg-manager .badge {
@@ -458,7 +458,7 @@
 }
 .sg-manager .modal-header {
   padding: 14px 18px;
-  background: var(--teal);
+  background: var(--pink);
   color: #fff;
   display: flex;
   justify-content: space-between;
@@ -493,8 +493,8 @@
 }
 .sg-manager .manager-message {
   padding: 12px;
-  border: 1px solid var(--teal);
-  background: var(--teal-light);
+  border: 1px solid var(--pink);
+  background: var(--pink-light);
   border-radius: 10px;
   font-size: 13px;
   line-height: 1.6;

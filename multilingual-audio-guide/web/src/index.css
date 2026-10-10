@@ -1,6 +1,6 @@
-:root {
+﻿:root {
   --bg: #f5f6f8; --surface: #fff; --text: #1c2430; --muted: #6b7686; --border: #dfe3ea;
-  --primary: #1e5eff; --primary-hover: #1548c9; --danger: #c62828; --info: #1e5eff;
+  --primary: #d63384; --primary-hover: #ad1f63; --danger: #c62828; --info: #d63384;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text); background: var(--bg);
 }
