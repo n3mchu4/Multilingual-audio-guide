@@ -1,13 +1,13 @@
-import { useGuideState } from "./hooks/useGuideState";
+import { useGuideState } from "../../hooks/useGuideState";
 import {
   SpotList,
   QuickList,
   DetailContent,
   MiniAudioPlayer,
-} from "./components/GuideContent";
-import DesktopMap from "./components/DesktopMap";
-import { places, words } from "./data/desktopData";
-import "./styles/UserWebPage.css";
+} from "../admin/components/GuideContent";
+import DesktopMap from "../admin/components/DesktopMap";
+import { places, words } from "../admin/data/desktopData";
+import "./UserWebPage.css";
 
 export default function UserWebPage() {
   const {

@@ -18,7 +18,7 @@ import {
   selectIsAuthenticated,
   useAppStore,
 } from '../store/useAppStore'
-
+import UserWebPage from "../features/user/UserWebPage";
 function ProtectedHome() {
   const navigate = useNavigate()
   const logout = useAppStore((s) => s.logout)
@@ -80,6 +80,7 @@ export default function AppRouter() {
             />
           }
         />
+        <Route path="/user" element={<UserWebPage />} />
       </Routes>
     </BrowserRouter>
   )
