@@ -30,9 +30,12 @@ const C = {
   cream: "#f7f8f6",
 };
 
-const photo = (url, width = 650) => ({
-  uri: url ? `${url}${url.includes("?") ? "&" : "?"}width=${width}` : "",
-});
+const photo = (url, width = 650) => {
+  if (!url) return { uri: "" };
+  if (url.includes("supabase.co")) return { uri: url };
+  return { uri: `${url}${url.includes("?") ? "&" : "?"}width=${width}` };
+};
+
 const limit = (value) => Math.min(2.8, Math.max(0.7, value));
 const formatTime = (millis) => {
   if (!millis || isNaN(millis)) return "00:00";
@@ -211,6 +214,7 @@ export default function App() {
   const [page, setPage] = useState("home");
   const [placesList, setPlacesList] = useState(initialPlaces);
   const [currentPlace, setCurrentPlace] = useState(0);
+  const [playingPlaceIndex, setPlayingPlaceIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [navigating, setNavigating] = useState(false);
   const [busVisible, setBusVisible] = useState(false);
@@ -232,7 +236,10 @@ export default function App() {
   }, []);
 
   const place = placesList[currentPlace] || placesList[0];
-  const audioSource = place?.audioUrl?.[lang];
+  const playingPlace = placesList[playingPlaceIndex] || place;
+  
+  // Audio Player phát nguồn audio của địa danh đang phát
+  const audioSource = playingPlace?.audioUrl?.[lang];
   const player = useAudioPlayer(audioSource);
 
   const showPage = (next) => {
@@ -241,9 +248,6 @@ export default function App() {
   };
 
   const openDetail = (index) => {
-    if (player.playing) {
-      player.pause();
-    }
     setCurrentPlace(index);
     showPage("detail");
   };
@@ -268,15 +272,25 @@ export default function App() {
     setBusVisible(false);
   };
 
-  const toggleAudio = () => {
-    if (!audioSource) {
+  const toggleAudio = (targetIndex = currentPlace) => {
+    const targetPlace = placesList[targetIndex];
+    const src = targetPlace?.audioUrl?.[lang];
+
+    if (!src) {
       alert("Chưa có tệp âm thanh (audio_url) cho địa danh này trong Database.");
       return;
     }
-    if (player.playing) {
-      player.pause();
-    } else {
+
+    if (targetIndex !== playingPlaceIndex) {
+      setPlayingPlaceIndex(targetIndex);
+      player.replace(src);
       player.play();
+    } else {
+      if (player.playing) {
+        player.pause();
+      } else {
+        player.play();
+      }
     }
   };
 
@@ -522,8 +536,13 @@ export default function App() {
           <Text style={styles.meta}>{place.time}</Text>
         </View>
         <View style={styles.player}>
-          <Pressable style={styles.playButton} onPress={toggleAudio}>
-            <Text style={styles.whiteText}>{player.playing ? "Ⅱ" : "▶"}</Text>
+          <Pressable 
+            style={styles.playButton} 
+            onPress={() => toggleAudio(currentPlace)}
+          >
+            <Text style={styles.whiteText}>
+              {player.playing && playingPlaceIndex === currentPlace ? "Ⅱ" : "▶"}
+            </Text>
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={styles.textStrong}>{place.name[lang]}</Text>
@@ -533,7 +552,7 @@ export default function App() {
                   styles.progressFilled,
                   {
                     width: `${
-                      player.duration
+                      player.duration && playingPlaceIndex === currentPlace
                         ? (player.currentTime / player.duration) * 100
                         : 0
                     }%`,
@@ -543,7 +562,9 @@ export default function App() {
             </View>
           </View>
           <Text style={styles.meta}>
-            {formatTime(player.currentTime * 1000)} / {formatTime(player.duration * 1000)}
+            {playingPlaceIndex === currentPlace
+              ? `${formatTime(player.currentTime * 1000)} / ${formatTime(player.duration * 1000)}`
+              : "00:00 / 00:00"}
           </Text>
         </View>
       </View>
@@ -606,6 +627,28 @@ export default function App() {
               SAIGON GUIDE · APP PROTOTYPE · QUẬN 1
             </Text>
           </ScrollView>
+
+          {/* ----- MINI AUDIO PLAYER TOÀN CỤC ----- */}
+          {player.playing && page !== "detail" && (
+            <Pressable 
+              style={styles.miniPlayer} 
+              onPress={() => openDetail(playingPlaceIndex)}
+            >
+              <Pressable 
+                style={styles.playButtonSmall} 
+                onPress={() => toggleAudio(playingPlaceIndex)}
+              >
+                <Text style={styles.whiteText}>{player.playing ? "Ⅱ" : "▶"}</Text>
+              </Pressable>
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={styles.miniTitle} numberOfLines={1}>
+                  🎧 {playingPlace?.name?.[lang]}
+                </Text>
+                <Text style={styles.miniSub}>Chạm để mở lại bài thuyết minh</Text>
+              </View>
+            </Pressable>
+          )}
+
           <View style={styles.bottomNav}>
             {[
               ["home", "🗺️", tr("mapTab")],
@@ -900,6 +943,32 @@ const styles = StyleSheet.create({
     marginRight: 10,
     backgroundColor: "#f4d9e5",
     borderRadius: 12,
+  },
+  miniPlayer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#17212b",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderColor: "#334155",
+  },
+  playButtonSmall: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: C.pink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  miniTitle: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  miniSub: {
+    color: "#94a3b8",
+    fontSize: 10,
   },
   bottomNav: {
     height: 62,

@@ -1,4 +1,7 @@
 import { createServer } from 'node:http'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import pg from 'pg'
 import { env } from './config/env.js'
 import { createLoginHandler } from './handlers/loginHandler.js'
@@ -6,6 +9,10 @@ import { createAuthService } from './services/authService.js'
 import { createTokenService } from './services/tokenService.js'
 import { createDevUserRepository } from './services/userRepository.js'
 import { AUTH_ERROR_CODES } from '../../shared/constants/auth.js'
+
+// Lấy đường dẫn thư mục hiện tại khi dùng ES Module
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 if (env.isProduction) {
   throw new Error('The seeded development API server cannot run in production.')
@@ -58,6 +65,7 @@ async function readJsonBody(request) {
 }
 
 const server = createServer(async (request, response) => {
+  // Xử lý Preflight CORS request
   if (request.method === 'OPTIONS') {
     response.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
@@ -68,6 +76,7 @@ const server = createServer(async (request, response) => {
     return
   }
 
+  // Health check API
   if (request.method === 'GET' && request.url === '/api/health') {
     sendJson(response, 200, { status: 'ok' })
     return
@@ -76,7 +85,6 @@ const server = createServer(async (request, response) => {
   // API lấy danh sách địa danh từ PostgreSQL
   if (request.method === 'GET' && request.url.startsWith('/api/places')) {
     try {
-      // Đổi 'landmarks' thành tên bảng lưu địa danh trong pgAdmin4 nếu khác
       const result = await db.query('SELECT * FROM landmarks') 
       sendJson(response, 200, { success: true, data: result.rows })
     } catch (error) {
@@ -86,6 +94,7 @@ const server = createServer(async (request, response) => {
     return
   }
 
+  // API Đăng nhập
   if (request.method === 'POST' && request.url === '/api/auth/login') {
     const parsed = await readJsonBody(request)
     if (parsed.tooLarge) {
@@ -102,6 +111,29 @@ const server = createServer(async (request, response) => {
     return
   }
 
+  // Xử lý gửi file audio (.mp3) cho Mobile/Web khi truy cập đường dẫn /audio/...
+  if (request.method === 'GET' && request.url.startsWith('/audio/')) {
+    // Giải mã đường dẫn URL để xử lý các ký tự khoảng trắng hoặc dấu ngoặc đơn/kép
+    const decodedUrl = decodeURIComponent(request.url)
+    const audioPath = path.join(__dirname, '../../web/public', decodedUrl)
+
+    fs.readFile(audioPath, (err, data) => {
+      if (err) {
+        console.error('Không tìm thấy file audio:', audioPath)
+        sendJson(response, 404, { error: { code: 'NOT_FOUND', message: 'Audio file not found' } })
+        return
+      }
+      response.writeHead(200, {
+        'Content-Type': 'audio/mpeg',
+        'Access-Control-Allow-Origin': '*',
+        'Content-Length': data.length
+      })
+      response.end(data)
+    })
+    return
+  }
+
+  // 404 Not Found cho các route còn lại
   sendJson(response, 404, { error: { code: 'NOT_FOUND', message: 'Not found' } })
 })
 
