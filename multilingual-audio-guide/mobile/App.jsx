@@ -12,7 +12,14 @@ import {
   Text,
   View,
 } from "react-native";
-import { places, words, mapPoints, userGps } from "./services/mobileData";
+import { useAudioPlayer } from "expo-audio";
+import {
+  places as initialPlaces,
+  words,
+  mapPoints,
+  userGps,
+  fetchPlacesFromAPI,
+} from "./services/mobileData";
 
 const C = {
   ink: "#17212b",
@@ -22,12 +29,19 @@ const C = {
   line: "#e5e9ec",
   cream: "#f7f8f6",
 };
+
 const photo = (url, width = 650) => ({
-  uri: `${url}${url.includes("?") ? "&" : "?"}width=${width}`,
+  uri: url ? `${url}${url.includes("?") ? "&" : "?"}width=${width}` : "",
 });
 const limit = (value) => Math.min(2.8, Math.max(0.7, value));
-const formatTime = (value) =>
-  `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+const formatTime = (millis) => {
+  if (!millis || isNaN(millis)) return "00:00";
+  const totalSeconds = Math.floor(millis / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+};
+
 const touchPoint = (event) => {
   const touches = event.nativeEvent.touches;
   if (!touches.length) return null;
@@ -101,9 +115,10 @@ function MapArea({
           previous.current = null;
         },
       }),
-    [onChangeView],
+    [onChangeView]
   );
-  const target = selected == null ? null : mapPoints[selected];
+
+  const target = selected == null ? null : mapPoints[selected % mapPoints.length];
   const line =
     target && navigating
       ? [
@@ -121,6 +136,7 @@ function MapArea({
           },
         ]
       : [];
+
   return (
     <View style={styles.mapViewport} {...panResponder.panHandlers}>
       <View
@@ -164,22 +180,25 @@ function MapArea({
             { left: `${userGps.x}%`, top: `${userGps.y}%` },
           ]}
         />
-        {placesList.map((place, i) => (
-          <Pressable
-            key={place.name.en}
-            onPress={() => onSelect(i)}
-            style={[
-              styles.mapPin,
-              { left: `${mapPoints[i].x}%`, top: `${mapPoints[i].y}%` },
-              selected === i && styles.mapPinSelected,
-            ]}
-          >
-            <View style={styles.pinDot} />
-            <Text style={styles.mapPinText} numberOfLines={1}>
-              {place.name[lang]}
-            </Text>
-          </Pressable>
-        ))}
+        {placesList.map((place, i) => {
+          const pt = mapPoints[i % mapPoints.length];
+          return (
+            <Pressable
+              key={place.id || i}
+              onPress={() => onSelect(i)}
+              style={[
+                styles.mapPin,
+                { left: `${pt.x}%`, top: `${pt.y}%` },
+                selected === i && styles.mapPinSelected,
+              ]}
+            >
+              <View style={styles.pinDot} />
+              <Text style={styles.mapPinText} numberOfLines={1}>
+                {place.name[lang]}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -190,66 +209,81 @@ export default function App() {
   const [welcomeLang, setWelcomeLang] = useState("vi");
   const [entered, setEntered] = useState(false);
   const [page, setPage] = useState("home");
+  const [placesList, setPlacesList] = useState(initialPlaces);
   const [currentPlace, setCurrentPlace] = useState(0);
   const [selected, setSelected] = useState(null);
   const [navigating, setNavigating] = useState(false);
   const [busVisible, setBusVisible] = useState(false);
   const [destinationOpen, setDestinationOpen] = useState(false);
   const [mapView, setMapView] = useState({ x: 0, y: 0, scale: 1, rotation: 0 });
-  const [playing, setPlaying] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+
   const scroll = useRef(null);
   const tr = (key, fallback = key) =>
     words[lang]?.[key] ?? words.vi?.[key] ?? fallback;
+
   useEffect(() => {
-    if (!playing || elapsed >= 200) return undefined;
-    const timer = setInterval(
-      () => setElapsed((value) => Math.min(200, value + 1)),
-      1000,
-    );
-    return () => clearInterval(timer);
-  }, [playing, elapsed]);
+    async function loadData() {
+      const apiData = await fetchPlacesFromAPI();
+      if (apiData && apiData.length > 0) {
+        setPlacesList(apiData);
+      }
+    }
+    loadData();
+  }, []);
+
+  const place = placesList[currentPlace] || placesList[0];
+  const audioSource = place?.audioUrl?.[lang];
+  const player = useAudioPlayer(audioSource);
+
   const showPage = (next) => {
     setPage(next);
     scroll.current?.scrollTo({ y: 0, animated: true });
   };
+
   const openDetail = (index) => {
-    if (index !== currentPlace) {
-      setPlaying(false);
-      setElapsed(0);
+    if (player.playing) {
+      player.pause();
     }
     setCurrentPlace(index);
     showPage("detail");
   };
+
   const setLanguage = (next) => {
     setLang(next);
-    setPlaying(false);
-    setElapsed(0);
+    if (player.playing) {
+      player.pause();
+    }
   };
+
   const choosePin = (index) => {
     setSelected(index);
     setNavigating(false);
     setBusVisible(false);
     setDestinationOpen(false);
   };
+
   const closePanel = () => {
     setSelected(null);
     setNavigating(false);
     setBusVisible(false);
   };
+
   const toggleAudio = () => {
-    if (elapsed >= 200) {
-      setElapsed(0);
-      setPlaying(true);
-    } else setPlaying((value) => !value);
+    if (!audioSource) {
+      alert("Chưa có tệp âm thanh (audio_url) cho địa danh này trong Database.");
+      return;
+    }
+    if (player.playing) {
+      player.pause();
+    } else {
+      player.play();
+    }
   };
-  const place = places[currentPlace];
-  const audioPlaying = playing && elapsed < 200;
 
   const welcome = (
     <ScrollView contentContainerStyle={styles.welcomeBody}>
       <ImageBackground
-        source={photo(places[2].image)}
+        source={photo(placesList[2]?.image || placesList[0]?.image)}
         resizeMode="cover"
         imageStyle={styles.welcomeImage}
         style={styles.welcomeHero}
@@ -324,15 +358,15 @@ export default function App() {
               ? lang === "vi"
                 ? "Chọn điểm đến"
                 : "Select destination"
-              : places[selected].name[lang]}{" "}
+              : placesList[selected]?.name[lang]}{" "}
             ▾
           </Text>
         </Pressable>
         {destinationOpen && (
           <ScrollView nestedScrollEnabled style={styles.destinationList}>
-            {places.map((p, i) => (
+            {placesList.map((p, i) => (
               <Pressable
-                key={p.name.en}
+                key={p.id || i}
                 onPress={() => choosePin(i)}
                 style={styles.destinationOption}
               >
@@ -342,7 +376,7 @@ export default function App() {
           </ScrollView>
         )}
         <MapArea
-          placesList={places}
+          placesList={placesList}
           lang={lang}
           selected={selected}
           onSelect={choosePin}
@@ -387,14 +421,14 @@ export default function App() {
             <View style={styles.rowBetween}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardTitle}>
-                  {places[selected].name[lang]}
+                  {placesList[selected]?.name[lang]}
                 </Text>
                 <Text style={styles.note}>
                   {lang === "vi" ? "Khoảng cách mẫu: " : "Demo distance: "}
-                  {places[selected].dist}
+                  {placesList[selected]?.dist}
                 </Text>
               </View>
-              <Pressable onPress={closePanel} accessibilityLabel="Close">
+              <Pressable onPress={closePanel}>
                 <Text style={styles.close}>✕</Text>
               </Pressable>
             </View>
@@ -422,16 +456,16 @@ export default function App() {
             {busVisible && (
               <Text style={styles.busInfo}>
                 🚌 {lang === "vi" ? "Tuyến minh họa" : "Illustrative bus lines"}
-                : {places[selected].bus}
+                : {placesList[selected]?.bus}
               </Text>
             )}
           </View>
         )}
       </View>
       <Text style={[styles.eyebrow, { margin: 16 }]}>DANH SÁCH KHÁM PHÁ</Text>
-      {places.map((p, i) => (
+      {placesList.map((p, i) => (
         <Pressable
-          key={p.name.en}
+          key={p.id || i}
           onPress={() => openDetail(i)}
           style={styles.placeCard}
         >
@@ -457,9 +491,9 @@ export default function App() {
         style={styles.quickChips}
         contentContainerStyle={styles.quickChipsContent}
       >
-        {places.map((p, i) => (
+        {placesList.map((p, i) => (
           <Choice
-            key={p.name.en}
+            key={p.id || i}
             selected={i === currentPlace}
             onPress={() => openDetail(i)}
             style={{ marginRight: 8 }}
@@ -488,35 +522,30 @@ export default function App() {
           <Text style={styles.meta}>{place.time}</Text>
         </View>
         <View style={styles.player}>
-          <Pressable
-            style={styles.playButton}
-            onPress={toggleAudio}
-            accessibilityLabel={audioPlaying ? tr("pause") : tr("listen")}
-          >
-            <Text style={styles.whiteText}>{audioPlaying ? "Ⅱ" : "▶"}</Text>
+          <Pressable style={styles.playButton} onPress={toggleAudio}>
+            <Text style={styles.whiteText}>{player.playing ? "Ⅱ" : "▶"}</Text>
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={styles.textStrong}>{place.name[lang]}</Text>
-            <Text style={styles.note}>
-              {audioPlaying
-                ? lang === "vi"
-                  ? "Đang mô phỏng phát…"
-                  : "Simulating playback…"
-                : tr("audioDemo")}
-            </Text>
             <View style={styles.progress}>
               <View
-                style={[styles.progressFilled, { width: `${elapsed / 2}%` }]}
+                style={[
+                  styles.progressFilled,
+                  {
+                    width: `${
+                      player.duration
+                        ? (player.currentTime / player.duration) * 100
+                        : 0
+                    }%`,
+                  },
+                ]}
               />
             </View>
           </View>
-          <Text style={styles.meta}>{formatTime(elapsed)}</Text>
+          <Text style={styles.meta}>
+            {formatTime(player.currentTime * 1000)} / {formatTime(player.duration * 1000)}
+          </Text>
         </View>
-        <Text style={styles.note}>
-          {lang === "vi"
-            ? "Trình phát mẫu, chưa có tệp âm thanh."
-            : "Demo player; no audio file connected."}
-        </Text>
       </View>
       <View style={styles.section}>
         <Text style={styles.cardTitle}>{tr("transcriptTitle")}</Text>
@@ -524,23 +553,16 @@ export default function App() {
           {place.history[lang]}
         </Text>
       </View>
-      <View style={styles.section}>
-        <Text style={styles.cardTitle}>{tr("galleryTitle")}</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginTop: 12 }}
-        >
-          {[place.image, ...place.gallery].map((url, i) => (
-            <Image
-              key={`${url}-${i}`}
-              source={photo(url, 400)}
-              style={styles.galleryPhoto}
-              accessibilityLabel={`${place.name[lang]} ${i + 1}`}
-            />
-          ))}
-        </ScrollView>
-      </View>
+      {place.gallery && place.gallery.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.cardTitle}>{tr("galleryTitle")}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
+            {[place.image, ...place.gallery].map((url, i) => (
+              <Image key={i} source={photo(url, 400)} style={styles.galleryPhoto} />
+            ))}
+          </ScrollView>
+        </View>
+      )}
     </>
   );
 
@@ -584,34 +606,6 @@ export default function App() {
               SAIGON GUIDE · APP PROTOTYPE · QUẬN 1
             </Text>
           </ScrollView>
-          {(audioPlaying || elapsed > 0) && (
-            <View style={styles.miniPlayer}>
-              <Pressable onPress={toggleAudio} style={styles.playButton}>
-                <Text style={styles.whiteText}>
-                  {audioPlaying ? "Ⅱ" : "▶"}
-                </Text>
-              </Pressable>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.textStrong} numberOfLines={1}>
-                  {place.name[lang]}
-                </Text>
-                <Text style={styles.note}>
-                  {audioPlaying
-                    ? lang === "vi"
-                      ? "Đang mô phỏng"
-                      : "Simulating"
-                    : lang === "vi"
-                      ? "Đã tạm dừng"
-                      : "Paused"}
-                </Text>
-              </View>
-              <Pressable onPress={() => showPage("detail")}>
-                <Text style={styles.pinkText}>
-                  {lang === "vi" ? "Mở ↗" : "Open ↗"}
-                </Text>
-              </Pressable>
-            </View>
-          )}
           <View style={styles.bottomNav}>
             {[
               ["home", "🗺️", tr("mapTab")],
@@ -624,9 +618,7 @@ export default function App() {
                 style={styles.navItem}
               >
                 <Text style={styles.navIcon}>{icon}</Text>
-                <Text
-                  style={[styles.navText, page === name && styles.navActive]}
-                >
+                <Text style={[styles.navText, page === name && styles.navActive]}>
                   {label}
                 </Text>
               </Pressable>
@@ -908,15 +900,6 @@ const styles = StyleSheet.create({
     marginRight: 10,
     backgroundColor: "#f4d9e5",
     borderRadius: 12,
-  },
-  miniPlayer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 8,
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderColor: C.line,
   },
   bottomNav: {
     height: 62,
