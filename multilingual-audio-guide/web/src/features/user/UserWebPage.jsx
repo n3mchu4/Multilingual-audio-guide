@@ -24,7 +24,7 @@ export default function UserWebPage() {
     openDetail,
     enterApp,
     audio,
-  } = useGuideState(words);
+  } = useGuideState(words, places);
   const contentProps = {
     places,
     lang,

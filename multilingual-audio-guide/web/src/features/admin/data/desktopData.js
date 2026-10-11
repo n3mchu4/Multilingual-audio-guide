@@ -5,6 +5,10 @@ export const places = [
       vi: "Chợ Bến Thành",
       en: "Ben Thanh Market",
     },
+    audioFile: {
+      vi: "https://pckzgrgjpydmflamelau.supabase.co/storage/v1/object/public/audio/ben-thanh-market/vi.mp3",
+      
+    },
     short: {
       vi: "Biểu tượng giao thương của Sài Gòn",
       en: "A landmark of Saigon commerce",
@@ -205,7 +209,7 @@ export const words = {
     backHome: "Trở về danh sách",
     nearbyLabel: "Quận 1, TP.HCM",
     audioTitle: "Thuyết minh audio",
-    audioDemo: "Bản mẫu trình phát · Chưa kết nối tệp âm thanh",
+  
     transcriptTitle: "Nội dung thuyết minh",
     galleryTitle: "Khoảnh khắc nổi bật",
     galleryHint: "Lướt ngang để xem thêm ảnh →",
