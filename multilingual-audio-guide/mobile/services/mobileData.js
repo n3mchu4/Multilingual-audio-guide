@@ -1,11 +1,15 @@
-// IPv4 máy tính của bạn khi chạy Expo Go (thay bằng IP Wi-Fi máy bạn nếu chạy thiết bị thật)
+// IPv4 máy tính của bạn khi chạy Expo Go
 export const API_BASE_URL = "http://192.168.1.14:5001";
+
+// Ảnh mặc định từ Supabase dự phòng khi chưa load kịp ảnh
+const DEFAULT_IMAGE = "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/ben-thanh-market/ben-thanh-market1.jpeg";
+
 export const fetchPlacesFromAPI = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/places`);
     const json = await response.json();
     if (json.success && Array.isArray(json.data)) {
-      return json.data.map((item, index) => ({
+      return json.data.map((item) => ({
         id: item.landmark_id,
         name: {
           vi: item.title_vi || "Chưa có tên",
@@ -25,12 +29,12 @@ export const fetchPlacesFromAPI = async () => {
         },
         audioUrl: {
           vi: item.audio_vi_url,
-          en: item.audio_en_url,
+          en: item.audio_en_url || item.audio_vi_url,
         },
-        image: item.background_image_url || "https://commons.wikimedia.org/wiki/Special:FilePath/Ben%20Thanh%20Market%20(36327758224).jpg",
+        image: item.background_image_url || DEFAULT_IMAGE,
         gallery: [],
         time: "5–7 phút",
-        bus: "Tuyến buýt Quận 1",
+        bus: "Tuyến buýt Bến Thành - Quận 1",
         dist: "Gần bạn",
       }));
     }
@@ -40,19 +44,34 @@ export const fetchPlacesFromAPI = async () => {
   return null;
 };
 
-// Dữ liệu mặc định dự phòng khi chưa load xong API
+// Dữ liệu mặc định dự phòng
 export const places = [
   {
-    id: "ben-thanh",
+    id: "ben-thanh-market",
     name: { vi: "Chợ Bến Thành", en: "Ben Thanh Market" },
     short: { vi: "Biểu tượng Sài Gòn", en: "Saigon Icon" },
-    desc: { vi: "Nơi giao thoa nhịp sống...", en: "City market..." },
-    history: { vi: "Chợ Bến Thành là điểm đến...", en: "Ben Thanh Market..." },
-    image: "https://commons.wikimedia.org/wiki/Special:FilePath/Ben%20Thanh%20Market%20(36327758224).jpg",
+    desc: { vi: "Nơi giao thoa nhịp sống Sài Gòn...", en: "City market..." },
+    history: { vi: "Chợ Bến Thành là điểm đến nổi tiếng...", en: "Ben Thanh Market..." },
+    image: DEFAULT_IMAGE,
     gallery: [],
     time: "5–7 phút",
     bus: "Tuyến 01, 03",
     dist: "450m",
+  },
+  {
+    id: "bach-dang-wharf",
+    name: { vi: "Bến Bạch Đằng", en: "Bach Dang Wharf" },
+    short: { vi: "Công viên bờ sông", en: "Riverside Park" },
+    desc: { vi: "Điểm ngắm cảnh sông Sài Gòn thơ mộng.", en: "Scenic spot along the Saigon River." },
+    history: { 
+      vi: "Bến Bạch Đằng trải dài dọc bờ sông Sài Gòn, sở hữu không gian thoáng đãng và tầm nhìn hướng về phía khu đô thị mới Thủ Thiêm.", 
+      en: "Bach Dang Wharf stretches along the Saigon River, offering beautiful views towards the Thu Thiem area." 
+    },
+    image: DEFAULT_IMAGE,
+    gallery: [],
+    time: "5–7 phút",
+    bus: "Tuyến 02, 04",
+    dist: "600m",
   }
 ];
 
@@ -115,14 +134,15 @@ export const words = {
   }
 };
 
+// Đủ 7 tọa độ điểm ghim trên bản đồ
 export const mapPoints = [
-  { x: 38, y: 20 },
-  { x: 12, y: 52 },
-  { x: 38, y: 42 },
-  { x: 48, y: 60 },
-  { x: 52, y: 74 },
-  { x: 62, y: 28 },
-  { x: 15, y: 32 },
+  { x: 38, y: 20 }, // 1. Bưu điện
+  { x: 12, y: 52 }, // 2. Chợ Bến Thành
+  { x: 38, y: 42 }, // 3. Dinh Độc Lập
+  { x: 48, y: 60 }, // 4. Nguyễn Huệ
+  { x: 52, y: 74 }, // 5. Bến Bạch Đằng
+  { x: 62, y: 28 }, // 6. Nhà hát Thành phố
+  { x: 15, y: 32 }, // 7. Nhà thờ Đức Bà
 ];
 
 export const userGps = { x: 20, y: 75 };
