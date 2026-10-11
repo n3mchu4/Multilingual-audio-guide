@@ -1,8 +1,13 @@
 import { useRef } from "react";
 export const imgUrl = (url, width = 900) =>
   `${url}${url.includes("?") ? "&" : "?"}width=${width}`;
-const time = (seconds) =>
-  `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+const time = (seconds) => {
+  if (!seconds || isNaN(seconds)) return "00:00";
+  const totalSeconds = Math.floor(seconds); // Cắt bỏ phần thập phân
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+};
 
 export function SpotList({ places, lang, tr, openDetail, mobile = false }) {
   return places.map((place, index) => (

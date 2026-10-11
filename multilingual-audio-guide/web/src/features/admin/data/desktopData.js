@@ -6,8 +6,8 @@ export const places = [
       en: "Ben Thanh Market",
     },
     audioFile: {
-      vi: "https://pckzgrgjpydmflamelau.supabase.co/storage/v1/object/public/audio/ben-thanh-market/vi.mp3",
-      
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/ben-thanh-market/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/ben-thanh-market/en.mp3"
     },
     short: {
       vi: "Biểu tượng giao thương của Sài Gòn",
@@ -34,6 +34,9 @@ export const places = [
       vi: "Bến Bạch Đằng",
       en: "Bach Dang Wharf",
     },
+     audioFile: {
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/bach-dang-wharf/en.mp3"
+    },
     short: {
       vi: "Khoảng xanh bên dòng sông Sài Gòn",
       en: "A riverside promenade on the Saigon River",
@@ -58,6 +61,9 @@ export const places = [
     name: {
       vi: "Dinh Độc Lập",
       en: "Independence Palace",
+    },
+    audioFile: {
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/vi.mp3"
     },
     short: {
       vi: "Dấu mốc quan trọng của lịch sử hiện đại",
@@ -84,6 +90,9 @@ export const places = [
       vi: "Nhà thờ Đức Bà",
       en: "Notre-Dame Cathedral Basilica",
     },
+     audioFile: {
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/notre-dame/vi.mp3"
+    },
     short: {
       vi: "Dấu ấn kiến trúc giữa trung tâm thành phố",
       en: "A striking architectural landmark downtown",
@@ -108,6 +117,9 @@ export const places = [
     name: {
       vi: "Bưu điện Trung tâm Sài Gòn",
       en: "Saigon Central Post Office",
+    },
+    audioFile: {
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/center-post-office/vi.mp3"
     },
     short: {
       vi: "Vẻ đẹp cổ điển và nhịp sống đô thị",
@@ -134,6 +146,9 @@ export const places = [
       vi: "Đường sách Nguyễn Văn Bình",
       en: "Nguyen Van Binh Book Street",
     },
+    audioFile: {
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/vi.mp3"
+    },
     short: {
       vi: "Góc nhỏ dành cho người yêu sách",
       en: "A welcoming corner for book lovers",
@@ -158,6 +173,9 @@ export const places = [
     name: {
       vi: "Nhà hát Thành phố",
       en: "Saigon Opera House",
+    },
+    audioFile: {
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/operahouse/vi.mp3"
     },
     short: {
       vi: "Nét duyên nghệ thuật giữa phố thị",

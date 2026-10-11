@@ -6,11 +6,16 @@ export function useAudioPlayer(src) {
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef(null);
+  const [error, setError] = useState(null);
 
-  // Khởi tạo đối tượng Audio và gắn các sự kiện
+  // Tạo lại đối tượng Audio mỗi khi src (link mp3 trên Supabase) thay đổi
   useEffect(() => {
-     console.log("Link audio nhận được:", src); 
-    if (!src) return;
+    setPlaying(false);
+    setElapsed(0);
+    setDuration(0);
+    setProgress(0);
+    setError(false);
+ 
 
    const audio = new Audio();
     audio.crossOrigin = "anonymous";

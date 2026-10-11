@@ -9,15 +9,11 @@ export function useGuideState(words, places) {
   const [page, setPage] = useState("home");
   const [currentPlace, setCurrentPlace] = useState(0);
   const scrollRef = useRef(null);
-  const currentPlaceData = places[currentPlace];
-// Lấy tên file audio (ví dụ: "Cho-Ben-Thanh.mp3")
-  const audioFileName = currentPlaceData?.audioFile || "";
-// Tạo đường dẫn đầy đủ, tự động thêm (vi) hoặc (en) dựa vào ngôn ngữ
-// Ví dụ: /audio/vi/(vi)Cho-Ben-Thanh.mp3
-  // Đoạn code gây lỗi (tìm và xóa nó đi)
-  const audioSrc = places[currentPlace]?.audioFile;
-// Sau đó truyền vào hook:
-  const audio = useAudioPlayer(places[currentPlace]?.audioFile?.[lang]);
+   // audioFile là object { vi: "https://...supabase.co/.../vi.mp3", en: "..." }
+  // Nếu chưa có file của ngôn ngữ đang chọn thì dùng tạm bản tiếng Việt.
+  const audioFile = places[currentPlace]?.audioFile;
+  const audioSrc = audioFile?.[lang] ?? audioFile?.vi ?? "";
+  const audio = useAudioPlayer(audioSrc);
   const tr = (key, fallback = key) =>
     words[lang]?.[key] ?? words.vi?.[key] ?? fallback;
   const showPage = (next) => {
