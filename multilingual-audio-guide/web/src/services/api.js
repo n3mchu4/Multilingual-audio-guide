@@ -1,30 +1,39 @@
 import { API_ENDPOINTS } from '@shared/api/endpoints.js'
 import { AUTH_ERROR_CODES } from '@shared/constants/auth.js'
+import { useAppStore } from '../store/useAppStore'
 
 // Để trống = gọi cùng origin (Vite proxy /api -> dev-api). Khi deploy thì đặt URL backend thật.
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export class ApiError extends Error {
-  constructor(code, status) {
-    super(code)
+  constructor(message, status, code = message) {
+    super(message)
+    this.name = 'ApiError'
     this.code = code
     this.status = status
   }
 }
 
-async function request(path, options) {
+async function request(path, options = {}, authenticated = false) {
   let res
   try {
+    const token = authenticated ? useAppStore.getState().session?.token : null
     res = await fetch(`${BASE_URL}${path}`, {
-      headers: { 'Content-Type': 'application/json' },
       ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
     })
   } catch {
     throw new ApiError(AUTH_ERROR_CODES.INTERNAL_ERROR, 0) // không kết nối được server
   }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new ApiError(data?.error?.code ?? AUTH_ERROR_CODES.INTERNAL_ERROR, res.status)
+    const code = data?.error?.code ?? AUTH_ERROR_CODES.INTERNAL_ERROR
+    const message = data?.error?.message ?? data?.error ?? code
+    throw new ApiError(message, res.status, code)
   }
   return data
 }
@@ -35,4 +44,8 @@ export function login({ unfid, password }) {
     method: 'POST',
     body: JSON.stringify({ unfid, password }),
   })
+}
+
+export function adminRequest(path, options = {}) {
+  return request(path, options, true)
 }

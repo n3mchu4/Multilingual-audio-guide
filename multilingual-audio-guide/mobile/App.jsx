@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   ImageBackground,
@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import { useAudioPlayer } from "expo-audio";
 import {
-  places as initialPlaces,
   words,
   mapPoints,
   userGps,
@@ -30,10 +29,9 @@ const C = {
   cream: "#f7f8f6",
 };
 
-const photo = (url, width = 650) => {
+const photo = (url) => {
   if (!url) return { uri: "" };
-  if (url.includes("supabase.co")) return { uri: url };
-  return { uri: `${url}${url.includes("?") ? "&" : "?"}width=${width}` };
+  return { uri: url };
 };
 
 const limit = (value) => Math.min(2.8, Math.max(0.7, value));
@@ -85,6 +83,8 @@ function MapArea({
   const previous = useRef(null);
   const panResponder = useMemo(
     () =>
+      // PanResponder retains gesture state internally via refs.
+      // eslint-disable-next-line react-hooks/refs
       PanResponder.create({
         onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponder: () => true,
@@ -212,7 +212,9 @@ export default function App() {
   const [welcomeLang, setWelcomeLang] = useState("vi");
   const [entered, setEntered] = useState(false);
   const [page, setPage] = useState("home");
-  const [placesList, setPlacesList] = useState(initialPlaces);
+  const [placesList, setPlacesList] = useState([]);
+  const [placesLoading, setPlacesLoading] = useState(true);
+  const [placesError, setPlacesError] = useState("");
   const [currentPlace, setCurrentPlace] = useState(0);
   const [playingPlaceIndex, setPlayingPlaceIndex] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -226,21 +228,53 @@ export default function App() {
     words[lang]?.[key] ?? words.vi?.[key] ?? fallback;
 
   useEffect(() => {
+    let active = true;
     async function loadData() {
-      const apiData = await fetchPlacesFromAPI();
-      if (apiData && apiData.length > 0) {
-        setPlacesList(apiData);
+      try {
+        const apiData = await fetchPlacesFromAPI();
+        if (active) {
+          setPlacesList(apiData);
+          setPlacesError("");
+        }
+      } catch (error) {
+        if (active) setPlacesError(error.message || "Không kết nối được PostgreSQL API.");
+      } finally {
+        if (active) setPlacesLoading(false);
       }
     }
-    loadData();
+    void loadData();
+    return () => { active = false; };
   }, []);
 
-  const place = placesList[currentPlace] || placesList[0];
+  const place = placesList[currentPlace] || placesList[0] || {
+    id: "",
+    name: { vi: "", en: "" },
+    image: "",
+    gallery: [],
+    desc: { vi: "", en: "" },
+    history: { vi: "", en: "" },
+    audioUrl: {},
+  };
   const playingPlace = placesList[playingPlaceIndex] || place;
   
   // Audio Player phát nguồn audio của địa danh đang phát
   const audioSource = playingPlace?.audioUrl?.[lang];
   const player = useAudioPlayer(audioSource);
+
+  if (placesLoading || placesError || placesList.length === 0) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.pageHeading}>
+          <Text style={styles.title}>Saigon Audio Guide</Text>
+          <Text style={styles.paragraph}>
+            {placesLoading
+              ? "Đang tải địa danh từ PostgreSQL..."
+              : placesError || "Chưa có địa danh trong cơ sở dữ liệu."}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const showPage = (next) => {
     setPage(next);

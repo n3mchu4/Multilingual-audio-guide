@@ -4,12 +4,13 @@ import Modal from '../components/Modal';
 
 export default function BusModal({ placeId = null }) {
   const { places, addBus, closeModal } = useAdmin();
-  const [selected, setSelected] = useState(placeId ?? places[0]?.id);
+  const [selected, setSelected] = useState(placeId ?? '');
   const [no, setNo] = useState('');
   const [stop, setStop] = useState('');
+  const selectedPlaceId = selected || placeId || places[0]?.id || '';
 
-  const submit = () => {
-    if (addBus({ placeId: Number(selected), no: no.trim(), stop: stop.trim() })) closeModal();
+  const submit = async () => {
+    if (await addBus({ placeId: selectedPlaceId, no: no.trim(), stop: stop.trim() })) closeModal();
   };
 
   return (
@@ -32,7 +33,8 @@ export default function BusModal({ placeId = null }) {
       <div className="form-grid">
         <div className="form-field full">
           <label>Địa danh</label>
-          <select value={selected} onChange={(e) => setSelected(e.target.value)}>
+          <select value={selectedPlaceId} onChange={(e) => setSelected(e.target.value)}>
+            {!selectedPlaceId && <option value="" disabled>Chọn địa danh</option>}
             {places.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}

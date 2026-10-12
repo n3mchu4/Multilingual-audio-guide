@@ -120,8 +120,7 @@ export default function Accounts() {
         </table>
       </div>
       <p className="footer-note">
-        Tài khoản Admin mặc định được bảo vệ trong bản minh họa. Chức năng đóng tài khoản ở đây chỉ thay đổi trạng thái
-        trên giao diện; hệ thống thật cần kiểm tra quyền và ghi nhận nhật ký.
+        Tài khoản được đọc và cập nhật trực tiếp trong PostgreSQL. Tài khoản Admin tổng được bảo vệ và không thể khóa từ màn hình này.
       </p>
     </section>
   );

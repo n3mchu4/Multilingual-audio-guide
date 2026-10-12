@@ -7,7 +7,7 @@ import AdminModals from './modals/AdminModals';
 import { NAV_ITEMS } from './navItems';
 
 function AdminShell() {
-  const { stats, openModal } = useAdmin();
+  const { stats, openModal, loading, loadError } = useAdmin();
   const { pathname } = useLocation();
 
   const path = pathname.replace(/\/$/, '');
@@ -68,6 +68,8 @@ function AdminShell() {
             </div>
           </header>
           <div className="content">
+            {loading && <p role="status">Đang tải dữ liệu từ PostgreSQL...</p>}
+            {loadError && <p role="alert">{loadError}</p>}
             <Outlet />
           </div>
         </main>

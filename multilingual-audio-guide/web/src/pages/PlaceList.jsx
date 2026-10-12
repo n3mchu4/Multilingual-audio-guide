@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PlaceCard from '../components/place/PlaceCard'
 
-const API_BASE = (
-  import.meta.env.VITE_GUIDE_API_URL || 'http://localhost:3002'
-).replace(/\/$/, '')
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
 export default function PlaceList() {
   const [places, setPlaces] = useState([])

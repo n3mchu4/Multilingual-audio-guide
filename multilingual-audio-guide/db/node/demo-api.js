@@ -1,16 +1,59 @@
-// Read-only local demo. No account, upload or approval endpoint is exposed.
+// PostgreSQL-backed application API and local media server.
 import http from 'node:http';
+import bcrypt from 'bcryptjs';
 import { createReadStream } from 'node:fs';
 import { stat, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { pool, query } from './database.js';
 import { listLandmarks, getLandmark } from './landmark-repository.js';
 import { storageRoot, validateStorageKey } from './storage.js';
+import {
+  addBusConnection,
+  createManagerAccount,
+  getAdminBootstrap,
+  removeBusConnection,
+  reviewLatestProposal,
+  setManagerStatus,
+  updateLandmark,
+  updateManagerAccount,
+} from './admin-repository.js';
+import { createTokenService } from '../../functions/src/services/tokenService.js';
+import { AUTH_ERROR_CODES } from '../../shared/constants/auth.js';
+import { getFeaturesForUserType, USER_TYPES } from '../../shared/constants/roles.js';
 const port=Number(process.env.DB_API_PORT ?? 3002);
 if (!Number.isInteger(port) || port<1 || port>65535) throw new Error('Invalid DB_API_PORT');
 const allowedOrigin=process.env.DB_API_CORS_ORIGIN ?? 'http://localhost:5173';
+const tokens=createTokenService(process.env.AUTH_SECRET ?? 'dev-only-secret-change-me');
+if (!process.env.AUTH_SECRET) console.warn('AUTH_SECRET is not set; configure a private random secret before deployment.');
+const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const types={'.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.webp':'image/webp',
   '.mp3':'audio/mpeg','.m4a':'audio/mp4','.ogg':'audio/ogg','.wav':'audio/wav'};
+function sendJson(res,status,body) {
+  res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});
+  res.end(JSON.stringify(body));
+}
+async function readJson(req) {
+  const chunks=[];
+  let size=0;
+  for await (const chunk of req) {
+    size+=chunk.length;
+    if (size>1024*1024) throw Object.assign(new Error('Request body too large'),{status:413});
+    chunks.push(chunk);
+  }
+  try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
+  catch { throw Object.assign(new Error('Invalid JSON body'),{status:400}); }
+}
+async function authenticatedAdmin(req) {
+  const authorization=req.headers.authorization;
+  const token=authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
+  let payload;
+  try { payload=tokens.verify(token); } catch { return null; }
+  if (!payload?.sub) return null;
+  const { rows }=await query(`SELECT user_id,role,is_active
+    FROM public.users WHERE user_id=$1`,[payload.sub]);
+  const user=rows[0];
+  return user?.role==='ADMIN' && user.is_active ? user : null;
+}
 async function serveMedia(req,res,pathname) {
   if ((process.env.STORAGE_MODE ?? 'local') !== 'local') { res.writeHead(404); res.end(); return; }
   let file,info;
@@ -47,28 +90,110 @@ async function serveMedia(req,res,pathname) {
 const server=http.createServer(async (req,res)=>{
   if (req.headers.origin===allowedOrigin) {
     res.setHeader('Access-Control-Allow-Origin',allowedOrigin);res.setHeader('Vary','Origin');
-    res.setHeader('Access-Control-Allow-Methods','GET, HEAD, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers','Range');
+    res.setHeader('Access-Control-Allow-Methods','GET, HEAD, POST, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers','Range, Content-Type, Authorization');
     res.setHeader('Access-Control-Expose-Headers','Content-Length, Content-Range, Accept-Ranges');
   }
-  const send=(status,body)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(body));};
   if (req.method==='OPTIONS') {res.writeHead(204);res.end();return;}
-  if (!['GET','HEAD'].includes(req.method)) {send(405,{error:'Method not allowed'});return;}
+  if (!['GET','HEAD','POST','PATCH','DELETE'].includes(req.method)) {
+    sendJson(res,405,{error:'Method not allowed'});return;
+  }
   try {
     const url=new URL(req.url,'http://localhost');
     if (url.pathname.startsWith('/media/')) {await serveMedia(req,res,url.pathname);return;}
     if (req.method==='HEAD') {res.writeHead(405);res.end();return;}
-    if (url.pathname==='/health/db') {await query('SELECT 1');send(200,{ok:true});return;}
+    if (req.method==='POST' && url.pathname==='/api/auth/login') {
+      const body=await readJson(req);
+      const username=String(body?.unfid ?? '').trim().toLowerCase();
+      const password=String(body?.password ?? '');
+      if (!username || !password) {
+        sendJson(res,400,{error:{code:AUTH_ERROR_CODES.INVALID_REQUEST,message:'Username and password are required'}});return;
+      }
+      const { rows }=await query(`SELECT u.user_id,u.username,u.password_hash,u.role,u.is_active,l.title_vi
+        FROM public.users u LEFT JOIN public.landmarks l ON l.landmark_id=u.landmark_id
+        WHERE u.username=$1`,[username]);
+      const user=rows[0];
+      if (!user || !user.is_active) {
+        sendJson(res,401,{error:{code:AUTH_ERROR_CODES.UNFID_NOT_FOUND,message:'Account not found'}});return;
+      }
+      if (!(await bcrypt.compare(password,user.password_hash))) {
+        sendJson(res,401,{error:{code:AUTH_ERROR_CODES.WRONG_PASSWORD,message:'Incorrect password'}});return;
+      }
+      const userType=user.role==='ADMIN' ? USER_TYPES.ADMIN : USER_TYPES.MANAGER;
+      const expiresAt=Date.now()+30*60*1000;
+      sendJson(res,200,{
+        token:tokens.sign({sub:user.user_id,userType,exp:expiresAt}),
+        expiresAt,
+        user:{unfid:user.username,name:user.role==='ADMIN'?'Quản trị viên':`Ban quản lý ${user.title_vi}`,userType},
+        features:getFeaturesForUserType(userType),
+      });
+      return;
+    }
+    if (url.pathname.startsWith('/api/admin/')) {
+      const admin=await authenticatedAdmin(req);
+      if (!admin) {sendJson(res,401,{error:'Admin authentication required'});return;}
+      if (req.method==='GET' && url.pathname==='/api/admin/bootstrap') {
+        sendJson(res,200,{data:await getAdminBootstrap()});return;
+      }
+      if (req.method==='POST' && url.pathname==='/api/admin/accounts') {
+        await createManagerAccount(await readJson(req));
+        sendJson(res,201,{ok:true});return;
+      }
+      const accountMatch=url.pathname.match(/^\/api\/admin\/accounts\/([0-9a-f-]+)(?:\/status)?$/i);
+      if (accountMatch && !uuidPattern.test(accountMatch[1])) {
+        sendJson(res,400,{error:'Invalid account ID'});return;
+      }
+      if (accountMatch && req.method==='PATCH' && url.pathname.endsWith('/status')) {
+        const body=await readJson(req);
+        if (typeof body.active!=='boolean') {sendJson(res,400,{error:'active must be a boolean'});return;}
+        await setManagerStatus(accountMatch[1],body.active);sendJson(res,200,{ok:true});return;
+      }
+      if (accountMatch && req.method==='PATCH') {
+        await updateManagerAccount(accountMatch[1],await readJson(req));
+        sendJson(res,200,{ok:true});return;
+      }
+      const landmarkMatch=url.pathname.match(/^\/api\/admin\/landmarks\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/(buses|review))?$/);
+      if (req.method==='PATCH' && landmarkMatch && !landmarkMatch[2]) {
+        await updateLandmark(landmarkMatch[1],await readJson(req));sendJson(res,200,{ok:true});return;
+      }
+      if (req.method==='POST' && landmarkMatch?.[2]==='buses') {
+        await addBusConnection(landmarkMatch[1],await readJson(req));sendJson(res,201,{ok:true});return;
+      }
+      if (req.method==='POST' && landmarkMatch?.[2]==='review') {
+        const body=await readJson(req);
+        if (!uuidPattern.test(String(body.proposalId ?? '')) || typeof body.accepted!=='boolean') {
+          sendJson(res,400,{error:'proposalId and accepted are required'});return;
+        }
+        await reviewLatestProposal(landmarkMatch[1],body.proposalId,admin.user_id,body.accepted);
+        sendJson(res,200,{ok:true});return;
+      }
+      const busMatch=url.pathname.match(/^\/api\/admin\/bus-connections\/([0-9a-f-]+)$/i);
+      if (req.method==='DELETE' && busMatch) {
+        if (!uuidPattern.test(busMatch[1])) {sendJson(res,400,{error:'Invalid bus connection ID'});return;}
+        await removeBusConnection(busMatch[1]);sendJson(res,200,{ok:true});return;
+      }
+      sendJson(res,404,{error:'Not found'});return;
+    }
+    if (req.method!=='GET') {sendJson(res,405,{error:'Method not allowed'});return;}
+    if (url.pathname==='/health/db' || url.pathname==='/api/health') {
+      await query('SELECT 1');sendJson(res,200,{ok:true});return;
+    }
     const language=url.searchParams.get('lang') ?? 'vi';
-    if (!['vi','en'].includes(language)) {send(400,{error:'Supported languages: vi, en'});return;}
-    if (url.pathname==='/api/landmarks') {send(200,{data:await listLandmarks(language)});return;}
+    if (!['vi','en'].includes(language)) {sendJson(res,400,{error:'Supported languages: vi, en'});return;}
+    if (url.pathname==='/api/landmarks' || url.pathname==='/api/places') {
+      sendJson(res,200,{data:await listLandmarks(language),success:true});return;
+    }
     const match=url.pathname.match(/^\/api\/landmarks\/([a-z0-9]+(?:-[a-z0-9]+)*)$/);
     if (match) {
       const item=await getLandmark(match[1],language);
-      send(item?200:404,item?{data:item}:{error:'Landmark not found'});return;
+      sendJson(res,item?200:404,item?{data:item}:{error:'Landmark not found'});return;
     }
-    send(404,{error:'Not found'});
-  } catch(error) {console.error('API error:',error.code ?? error.name);send(500,{error:'Database request failed'});}
+    sendJson(res,404,{error:'Not found'});
+  } catch(error) {
+    const status=error.status ?? (error.code==='23505' ? 409 : 500);
+    console.error('API error:',error.code ?? error.name);
+    sendJson(res,status,{error:status===500?'Database request failed':error.message});
+  }
 });
 server.listen(port,'0.0.0.0',()=>console.log(`Demo API: http://localhost:${port}`));
 let closing=false;

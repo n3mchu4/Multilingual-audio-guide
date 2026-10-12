@@ -11,7 +11,7 @@ import AdminRoutes from '../features/admin/AdminRoutes'
 import LoginPage from '../features/auth/LoginPage'
 import RequireAuth from '../features/auth/RequireAuth'
 import Home from '../pages/Home'
-import PlaceList from '../pages/PlaceDetail'
+import PlaceList from '../pages/PlaceList'
 import PlaceDetail from '../pages/PlaceDetail'
 import useIdleLogout from '../hooks/useIdleLogout'
 import {

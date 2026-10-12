@@ -4,21 +4,21 @@ import Modal from '../components/Modal';
 
 /** editId = null → tạo mới; có id → chỉnh sửa. */
 export default function AccountModal({ editId = null }) {
-  const { accounts, saveAccount, closeModal } = useAdmin();
+  const { places, accounts, saveAccount, closeModal } = useAdmin();
   const editing = editId != null ? accounts.find((a) => a.id === editId) : null;
-  const [name, setName] = useState(editing?.name ?? '');
   const [username, setUsername] = useState(editing?.username ?? '');
+  const [landmarkId, setLandmarkId] = useState(editing?.landmarkId ?? '');
   const [password, setPassword] = useState('');
 
-  const submit = () => {
-    if (saveAccount({ editId, name: name.trim(), username: username.trim(), password })) closeModal();
+  const submit = async () => {
+    if (await saveAccount({ editId, username: username.trim(), landmarkId, password })) closeModal();
   };
 
   return (
     <Modal
       narrow
       title={editing ? 'Chỉnh sửa tài khoản' : 'Tạo tài khoản Manager'}
-      subtitle={editing ? 'Cập nhật tên hiển thị và tên đăng nhập' : 'Admin cấp thông tin đăng nhập cho tài khoản mới'}
+      subtitle={editing ? 'Cập nhật địa danh phụ trách và tên đăng nhập' : 'Admin cấp thông tin đăng nhập cho tài khoản mới'}
       onClose={closeModal}
       footer={
         <>
@@ -34,8 +34,10 @@ export default function AccountModal({ editId = null }) {
       {editing ? (
         <div className="form-grid">
           <div className="form-field full">
-            <label>Ban quản lý / địa danh phụ trách</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} />
+            <label>Địa danh phụ trách</label>
+            <select value={landmarkId} onChange={(e) => setLandmarkId(e.target.value)}>
+              {places.map((place) => <option key={place.id} value={place.id}>{place.name}</option>)}
+            </select>
           </div>
           <div className="form-field full">
             <label>Tên đăng nhập</label>
@@ -47,7 +49,10 @@ export default function AccountModal({ editId = null }) {
           <div className="form-grid">
             <div className="form-field">
               <label>Địa danh phụ trách</label>
-              <input placeholder="Ví dụ: Chợ Bến Thành" value={name} onChange={(e) => setName(e.target.value)} />
+              <select value={landmarkId} onChange={(e) => setLandmarkId(e.target.value)} required>
+                <option value="" disabled>Chọn địa danh</option>
+                {places.map((place) => <option key={place.id} value={place.id}>{place.name}</option>)}
+              </select>
             </div>
             <div className="form-field">
               <label>Tên đăng nhập</label>
@@ -72,9 +77,7 @@ export default function AccountModal({ editId = null }) {
             </div>
           </div>
           <p className="footer-note">
-            Nên đặt tên tài khoản theo địa danh phụ trách, ví dụ manager.chobenthanh. Nếu tạo tài khoản cho địa danh
-            mới, Manager gửi yêu cầu tạo địa danh; khi Admin chấp nhận, địa danh sẽ xuất hiện ở danh sách và tab kết nối
-            xe buýt.
+            Tài khoản Manager chỉ được gắn với một địa danh đã có trong cơ sở dữ liệu.
           </p>
         </>
       )}

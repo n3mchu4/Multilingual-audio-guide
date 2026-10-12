@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useGuideState } from "../../hooks/useGuideState";
 import {
   SpotList,
@@ -6,10 +7,53 @@ import {
   MiniAudioPlayer,
 } from "../admin/components/GuideContent";
 import DesktopMap from "../admin/components/DesktopMap";
-import { places, words } from "../admin/data/desktopData";
+import { words } from "../admin/data/desktopData";
 import "./UserWebPage.css";
 
+function mapLandmark(landmark) {
+  return {
+    id: landmark.id,
+    name: { vi: landmark.title_vi, en: landmark.title_en },
+    audioFile: { vi: landmark.audio_vi_url, en: landmark.audio_en_url },
+    short: { vi: landmark.subtitle_vi, en: landmark.subtitle_en },
+    desc: { vi: landmark.description_vi, en: landmark.description_en },
+    history: {
+      vi: landmark.transcript_vi || landmark.description_vi,
+      en: landmark.transcript_en || landmark.description_en,
+    },
+    image: landmark.background_image_url || "",
+    gallery: landmark.images || [],
+    buses: landmark.buses || [],
+    time: "5–7 phút",
+  };
+}
+
 export default function UserWebPage() {
+  const [places, setPlaces] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadPlaces() {
+      try {
+        const response = await fetch("/api/landmarks?lang=vi", { signal: controller.signal });
+        if (!response.ok) throw new Error("Không tải được địa danh từ PostgreSQL.");
+        const result = await response.json();
+        if (!Array.isArray(result.data)) throw new Error("API trả về danh sách địa danh không hợp lệ.");
+        setPlaces(result.data.map(mapLandmark));
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setLoadError(error.message || "Không kết nối được PostgreSQL.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+    void loadPlaces();
+    return () => controller.abort();
+  }, []);
+
   const {
     lang,
     welcomeLang,
@@ -25,6 +69,16 @@ export default function UserWebPage() {
     enterApp,
     audio,
   } = useGuideState(words, places);
+  if (loading || loadError || places.length === 0) {
+    return (
+      <main className="sg-web" style={{ padding: 32 }}>
+        <h1>Saigon Audio Guide</h1>
+        <p role={loadError ? "alert" : "status"}>
+          {loading ? "Đang tải địa danh từ PostgreSQL..." : loadError || "Chưa có địa danh trong cơ sở dữ liệu."}
+        </p>
+      </main>
+    );
+  }
   const contentProps = {
     places,
     lang,
@@ -167,19 +221,22 @@ export default function UserWebPage() {
               <h1>{tr("homeTitle", "Khám phá Sài Gòn")}</h1>
               <p>
                 {tr(
-                  "homeSubtitle",
-                  "Bảy điểm dừng chân, những câu chuyện làm nên thành phố.",
+                  "placesSubtitle",
+                  lang === "vi"
+                    ? `${places.length} địa danh được tải từ PostgreSQL.`
+                    : `${places.length} landmarks loaded from PostgreSQL.`,
                 )}
               </p>
             </div>
             <div className="count-pill">
-              <strong>{"07"}</strong>{" "}
+              <strong>{String(places.length).padStart(2, "0")}</strong>{" "}
               <span>{tr("placesCount", "địa danh nổi bật")}</span>
             </div>
           </div>
           <div className="explore-layout">
             <aside className="map-column">
               <DesktopMap
+                places={places}
                 lang={lang}
                 tr={tr}
                 currentPlace={currentPlace}
@@ -216,6 +273,7 @@ export default function UserWebPage() {
           <div className="detail-layout">
             <aside className="detail-side">
               <DesktopMap
+                places={places}
                 lang={lang}
                 tr={tr}
                 currentPlace={currentPlace}
@@ -309,7 +367,7 @@ export default function UserWebPage() {
               <p>
                 {tr(
                   "aboutDesc",
-                  "Bản mẫu giao diện phục vụ đồ án thuyết minh đa ngôn ngữ. Bản đồ, nội dung chỉ đường và trình phát âm thanh trong mẫu là minh họa; có thể kết nối dữ liệu và dịch vụ thật ở giai đoạn phát triển.",
+                  "Nội dung địa danh được tải từ PostgreSQL; ảnh và audio được phát từ các URL Storage đã lưu trong cơ sở dữ liệu. Bản đồ và lộ trình hiện vẫn là minh họa.",
                 )}
               </p>
             </div>
@@ -323,7 +381,7 @@ export default function UserWebPage() {
         />
         <div className="footer">
           {
-            "SAIGON GUIDE · UI PROTOTYPE · QUẬN 1, TP. HỒ CHÍ MINH · ẢNH: WIKIMEDIA COMMONS"
+            "SAIGON GUIDE · POSTGRESQL + STORAGE · QUẬN 1, TP. HỒ CHÍ MINH"
           }
         </div>
       </div>

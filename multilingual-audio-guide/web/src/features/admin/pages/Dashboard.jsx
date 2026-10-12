@@ -115,7 +115,7 @@ export default function Dashboard() {
               <span className="notice-icon">▤</span>
               <div>
                 <b>Dữ liệu xe buýt</b>
-                <p>{stats.buses} kết nối tuyến/trạm đang được khai báo trong dữ liệu mẫu.</p>
+                <p>{stats.buses} kết nối tuyến/trạm đang được lưu trong PostgreSQL.</p>
               </div>
             </div>
           </div>
