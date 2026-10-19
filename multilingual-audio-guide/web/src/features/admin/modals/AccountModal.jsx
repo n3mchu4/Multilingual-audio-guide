@@ -18,7 +18,7 @@ export default function AccountModal({ editId = null }) {
     <Modal
       narrow
       title={editing ? 'Chỉnh sửa tài khoản' : 'Tạo tài khoản Manager'}
-      subtitle={editing ? 'Cập nhật địa danh phụ trách và tên đăng nhập' : 'Admin cấp thông tin đăng nhập cho tài khoản mới'}
+      subtitle={editing ? 'Cập nhật địa danh, tên đăng nhập hoặc đặt mật khẩu mới' : 'Admin cấp thông tin đăng nhập cho tài khoản mới'}
       onClose={closeModal}
       footer={
         <>
@@ -32,18 +32,35 @@ export default function AccountModal({ editId = null }) {
       }
     >
       {editing ? (
-        <div className="form-grid">
-          <div className="form-field full">
-            <label>Địa danh phụ trách</label>
-            <select value={landmarkId} onChange={(e) => setLandmarkId(e.target.value)}>
-              {places.map((place) => <option key={place.id} value={place.id}>{place.name}</option>)}
-            </select>
+        <>
+          <div className="form-grid">
+            <div className="form-field full">
+              <label>Địa danh phụ trách</label>
+              <select value={landmarkId} onChange={(e) => setLandmarkId(e.target.value)}>
+                {places.map((place) => <option key={place.id} value={place.id}>{place.name}</option>)}
+              </select>
+            </div>
+            <div className="form-field full">
+              <label>Tên đăng nhập</label>
+              <input value={username} onChange={(e) => setUsername(e.target.value)} />
+            </div>
+            <div className="form-field full">
+              <label>Mật khẩu mới (để trống nếu không đổi)</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                placeholder="Nhập mật khẩu mới, tối thiểu 10 ký tự"
+                minLength={10}
+                maxLength={72}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="form-field full">
-            <label>Tên đăng nhập</label>
-            <input value={username} onChange={(e) => setUsername(e.target.value)} />
-          </div>
-        </div>
+          <p className="footer-note">
+            Để trống mật khẩu nếu không muốn thay đổi. Mật khẩu mới cần ít nhất 10 ký tự.
+          </p>
+        </>
       ) : (
         <>
           <div className="form-grid">
@@ -66,7 +83,11 @@ export default function AccountModal({ editId = null }) {
               <label>Mật khẩu khởi tạo</label>
               <input
                 type="password"
+                autoComplete="new-password"
                 placeholder="Tạo mật khẩu"
+                required
+                minLength={10}
+                maxLength={72}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

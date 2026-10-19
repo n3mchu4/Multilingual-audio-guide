@@ -151,15 +151,25 @@ export async function createManagerAccount({ username, password, landmarkId }) {
   [null, rows[0].user_id, `Tạo tài khoản Manager “${normalizedUsername}”.`]);
 }
 
-export async function updateManagerAccount(id, { username, landmarkId }) {
+export async function updateManagerAccount(id, { username, landmarkId, password }) {
   const normalizedUsername = String(username ?? '').trim().toLowerCase();
+  const normalizedPassword = password == null ? '' : String(password);
   if (!/^[a-z0-9._-]{3,80}$/.test(normalizedUsername)) {
     throw new Error('Tên đăng nhập không hợp lệ.');
   }
+  if (normalizedPassword && (
+    normalizedPassword.length < 10
+    || Buffer.byteLength(normalizedPassword, 'utf8') > 72
+  )) {
+    throw new Error('Mật khẩu mới phải có ít nhất 10 ký tự và tối đa 72 byte UTF-8.');
+  }
+  const passwordHash = normalizedPassword
+    ? await bcrypt.hash(normalizedPassword, 12)
+    : null;
   const { rowCount } = await query(`UPDATE public.users
-    SET username = $1, landmark_id = $2
-    WHERE user_id = $3 AND role = 'MANAGER'`,
-  [normalizedUsername, landmarkId, id]);
+    SET username = $1, landmark_id = $2, password_hash = COALESCE($3, password_hash)
+    WHERE user_id = $4 AND role = 'MANAGER'`,
+  [normalizedUsername, landmarkId, passwordHash, id]);
   if (!rowCount) throw new Error('Không tìm thấy tài khoản Manager.');
 }
 
