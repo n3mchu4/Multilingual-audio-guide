@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 import { USER_TYPES } from '@shared/constants/roles.js'
 import AdminRoutes from '../features/admin/AdminRoutes'
+import ManagerRoutes from '../features/manager/ManagerRoutes'
 import LoginPage from '../features/auth/LoginPage'
 import RequireAuth from '../features/auth/RequireAuth'
 import Home from '../pages/Home'
@@ -58,6 +59,15 @@ export default function AppRouter() {
           element={
             <RequireAuth userType={USER_TYPES.ADMIN}>
               <AdminRoutes />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/manager/*"
+          element={
+            <RequireAuth userType={USER_TYPES.MANAGER}>
+              <ManagerRoutes />
             </RequireAuth>
           }
         />

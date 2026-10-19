@@ -17,6 +17,10 @@ import {
   updateLandmark,
   updateManagerAccount,
 } from './admin-repository.js';
+import {
+  getManagerWorkspace,
+  submitManagerProposal,
+} from './manager-repository.js';
 import { createTokenService } from '../../functions/src/services/tokenService.js';
 import { AUTH_ERROR_CODES } from '../../shared/constants/auth.js';
 import { getFeaturesForUserType, USER_TYPES } from '../../shared/constants/roles.js';
@@ -53,6 +57,16 @@ async function authenticatedAdmin(req) {
     FROM public.users WHERE user_id=$1`,[payload.sub]);
   const user=rows[0];
   return user?.role==='ADMIN' && user.is_active ? user : null;
+}
+async function authenticatedManager(req) {
+  const authorization=req.headers.authorization;
+  const token=authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
+  let payload;
+  try { payload=tokens.verify(token); } catch { return null; }
+  if (!payload?.sub || !uuidPattern.test(payload.sub)) return null;
+  const { rows }=await query(`SELECT user_id,username,landmark_id
+    FROM public.users WHERE user_id=$1 AND role='MANAGER' AND is_active`,[payload.sub]);
+  return rows[0] ?? null;
 }
 async function serveMedia(req,res,pathname) {
   if ((process.env.STORAGE_MODE ?? 'local') !== 'local') { res.writeHead(404); res.end(); return; }
@@ -128,6 +142,18 @@ const server=http.createServer(async (req,res)=>{
         features:getFeaturesForUserType(userType),
       });
       return;
+    }
+    if (url.pathname.startsWith('/api/manager/')) {
+      const manager=await authenticatedManager(req);
+      if (!manager) {sendJson(res,401,{error:'Manager authentication required'});return;}
+      if (req.method==='GET' && url.pathname==='/api/manager/workspace') {
+        sendJson(res,200,{data:await getManagerWorkspace(manager.user_id)});return;
+      }
+      if (req.method==='POST' && url.pathname==='/api/manager/proposals') {
+        const proposal=await submitManagerProposal(manager.user_id,await readJson(req));
+        sendJson(res,201,{data:proposal});return;
+      }
+      sendJson(res,404,{error:'Not found'});return;
     }
     if (url.pathname.startsWith('/api/admin/')) {
       const admin=await authenticatedAdmin(req);
