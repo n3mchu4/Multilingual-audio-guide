@@ -22,10 +22,10 @@ export const places = [
       en: "Ben Thanh Market is a familiar stop for residents and visitors exploring central Saigon. Its clock tower above the main entrance has become one of the city’s recognizable landmarks. Inside, stalls offer textiles, souvenirs, local specialties and Vietnamese dishes. Walking through the aisles gives visitors a glimpse of everyday commerce and Southern Vietnamese flavors. More than a place to shop, the market reflects the city’s lively daily rhythm.",
     },
     image:
-      "https://commons.wikimedia.org/wiki/Special:FilePath/Ben%20Thanh%20Market%20(36327758224).jpg",
+      "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/ben-thanh-market/ben-thanh-market1.jpeg",
     gallery: [
-      "https://commons.wikimedia.org/wiki/Special:FilePath/Ben%20Thanh%20Market%20(36350099003).jpg",
-      "https://commons.wikimedia.org/wiki/Special:FilePath/Ben%20Thanh%20Market%20(37214722264).jpg",
+      "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/ben-thanh-market/ben-thanh-market1.jpeg",
+      "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/ben-thanh-market/ben-thanh-market1.jpeg",
     ],
     time: "5–7 phút",
   },
@@ -35,6 +35,7 @@ export const places = [
       en: "Bach Dang Wharf",
     },
      audioFile: {
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/bach-dang-wharf/vi.mp3",
       en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/bach-dang-wharf/en.mp3"
     },
     short: {
@@ -63,7 +64,8 @@ export const places = [
       en: "Independence Palace",
     },
     audioFile: {
-      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/vi.mp3"
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/independence-place/en.mp3"
     },
     short: {
       vi: "Dấu mốc quan trọng của lịch sử hiện đại",
@@ -91,7 +93,8 @@ export const places = [
       en: "Notre-Dame Cathedral Basilica",
     },
      audioFile: {
-      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/notre-dame/vi.mp3"
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/notre-dame/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/notre-dame/en.mp3"
     },
     short: {
       vi: "Dấu ấn kiến trúc giữa trung tâm thành phố",
@@ -119,7 +122,8 @@ export const places = [
       en: "Saigon Central Post Office",
     },
     audioFile: {
-      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/center-post-office/vi.mp3"
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/center-post-office/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/center-post-office/en.mp3"
     },
     short: {
       vi: "Vẻ đẹp cổ điển và nhịp sống đô thị",
@@ -147,7 +151,8 @@ export const places = [
       en: "Nguyen Van Binh Book Street",
     },
     audioFile: {
-      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/vi.mp3"
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/en.mp3"
     },
     short: {
       vi: "Góc nhỏ dành cho người yêu sách",
@@ -175,7 +180,8 @@ export const places = [
       en: "Saigon Opera House",
     },
     audioFile: {
-      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/operahouse/vi.mp3"
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/operahouse/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/operahouse/en.mp3"
     },
     short: {
       vi: "Nét duyên nghệ thuật giữa phố thị",

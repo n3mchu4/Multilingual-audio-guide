@@ -2,15 +2,15 @@
 const DEFAULT_PIC = 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=240&q=80';
 
 export const pics = {
-  'Chợ Bến Thành': 'https://images.unsplash.com/photo-1555921015-5532091f6026?auto=format&fit=crop&w=240&q=80',
-  'Bến Bạch Đằng': 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=240&q=80',
-  'Dinh Độc Lập': 'https://images.unsplash.com/photo-1565967511849-76a60a516170?auto=format&fit=crop&w=240&q=80',
-  'Nhà thờ Đức Bà': 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=240&q=80',
+  'Chợ Bến Thành': 'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/ben-thanh-market/ben-thanh-market1.jpeg',
+  'Bến Bạch Đằng': 'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/bach-dang-wharf/bach_dang_wharf.jpg',
+  'Dinh Độc Lập': 'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Independence_Palace.jpg',
+  'Nhà thờ Đức Bà': 'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Notre-Dame_Cathedral_Basilica_of_Saigon-1.jpg',
   'Bưu điện Trung tâm Sài Gòn':
-    'https://images.unsplash.com/photo-1569949381669-ecf31ae8e613?auto=format&fit=crop&w=240&q=80',
+    'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Saigon_Central_Post_Office.jpg',
   'Đường sách Nguyễn Văn Bình':
-    'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=240&q=80',
-  'Nhà hát Thành phố': 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=240&q=80',
+    'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/book-street/book_street.jpg',
+  'Nhà hát Thành phố': 'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Ho_Chi_Minh_City_Opera_House.jpg',
 };
 
 export function pic(name) {
