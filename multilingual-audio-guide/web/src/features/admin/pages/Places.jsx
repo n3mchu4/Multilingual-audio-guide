@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAdmin } from '../AdminContext';
-import { pic } from '../data/mockData';
 
 export default function Places() {
   const { places, openModal } = useAdmin();
@@ -56,7 +55,7 @@ export default function Places() {
                     <div className="place-cell">
                       <img
                         className="place-img"
-                        src={pic(p.name)}
+                        src={p.current?.bgImg || undefined}
                         alt=""
                         onError={(e) => (e.currentTarget.style.opacity = '.35')}
                       />
@@ -103,6 +102,9 @@ export default function Places() {
                           Xem chi tiết
                         </button>
                       )}
+                      <button className="btn small" onClick={() => openModal('placeEditor', { placeId: p.id })}>
+                        Chỉnh sửa
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -118,8 +120,7 @@ export default function Places() {
         </table>
       </div>
       <p className="footer-note">
-        Lưu ý: Đây là bản giao diện minh họa với dữ liệu mẫu. Khi tích hợp backend, quyết định duyệt/từ chối sẽ được lưu
-        và gửi thông báo thực tế đến tài khoản Manager.
+        Nội dung và trạng thái yêu cầu được tải từ PostgreSQL. Các URL ảnh/audio được lưu dưới dạng tham chiếu đến Storage.
       </p>
     </section>
   );

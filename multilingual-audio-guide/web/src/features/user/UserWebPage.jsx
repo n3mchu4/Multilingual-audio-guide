@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGuideState } from "../../hooks/useGuideState";
 import {
   SpotList,
@@ -6,10 +7,117 @@ import {
   MiniAudioPlayer,
 } from "../admin/components/GuideContent";
 import DesktopMap from "../admin/components/DesktopMap";
-import { places, words } from "../admin/data/desktopData";
+import { words } from "../admin/data/desktopData";
 import "./UserWebPage.css";
 
+const VISITOR_ID_KEY = "saigon-audio-guide.visitor-id";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function createVisitorId() {
+  const bytes = new Uint8Array(16);
+  if (globalThis.crypto?.getRandomValues) {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    bytes.forEach((_, index) => {
+      bytes[index] = Math.floor(Math.random() * 256);
+    });
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function getVisitorId() {
+  try {
+    const existingId = window.localStorage.getItem(VISITOR_ID_KEY);
+    if (existingId && UUID_PATTERN.test(existingId)) return existingId;
+    const visitorId = createVisitorId();
+    window.localStorage.setItem(VISITOR_ID_KEY, visitorId);
+    return visitorId;
+  } catch {
+    return createVisitorId();
+  }
+}
+
+function mapLandmark(landmark) {
+  return {
+    id: landmark.id,
+    name: { vi: landmark.title_vi, en: landmark.title_en },
+    audioFile: { vi: landmark.audio_vi_url, en: landmark.audio_en_url },
+    short: { vi: landmark.subtitle_vi, en: landmark.subtitle_en },
+    desc: { vi: landmark.description_vi, en: landmark.description_en },
+    history: {
+      vi: landmark.transcript_vi || landmark.description_vi,
+      en: landmark.transcript_en || landmark.description_en,
+    },
+    image: landmark.background_image_url || "",
+    gallery: landmark.images || [],
+    buses: landmark.buses || [],
+    time: "5–7 phút",
+  };
+}
+
 export default function UserWebPage() {
+  const [places, setPlaces] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const visitorIdRef = useRef("");
+
+  useEffect(() => {
+    const visitorId = getVisitorId();
+    visitorIdRef.current = visitorId;
+    void fetch("/api/analytics/visitors", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitorId }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+      })
+      .catch((error) => {
+        console.error("Could not record visitor analytics:", error);
+      });
+  }, []);
+
+  const recordAudioListen = useCallback(({ landmarkId, language }) => {
+    const visitorId = visitorIdRef.current;
+    if (!visitorId || !landmarkId) return;
+
+    void fetch("/api/analytics/listens", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitorId, landmarkId, language }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+      })
+      .catch((error) => {
+        console.error("Could not record audio listen:", error);
+      });
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadPlaces() {
+      try {
+        const response = await fetch("/api/landmarks?lang=vi", { signal: controller.signal });
+        if (!response.ok) throw new Error("Không tải được địa danh từ PostgreSQL.");
+        const result = await response.json();
+        if (!Array.isArray(result.data)) throw new Error("API trả về danh sách địa danh không hợp lệ.");
+        setPlaces(result.data.map(mapLandmark));
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setLoadError(error.message || "Không kết nối được PostgreSQL.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+    void loadPlaces();
+    return () => controller.abort();
+  }, []);
+
   const {
     lang,
     welcomeLang,
@@ -24,7 +132,17 @@ export default function UserWebPage() {
     openDetail,
     enterApp,
     audio,
-  } = useGuideState(words, places);
+  } = useGuideState(words, places, recordAudioListen);
+  if (loading || loadError || places.length === 0) {
+    return (
+      <main className="sg-web" style={{ padding: 32 }}>
+        <h1>Saigon Audio Guide</h1>
+        <p role={loadError ? "alert" : "status"}>
+          {loading ? "Đang tải địa danh từ PostgreSQL..." : loadError || "Chưa có địa danh trong cơ sở dữ liệu."}
+        </p>
+      </main>
+    );
+  }
   const contentProps = {
     places,
     lang,
@@ -167,19 +285,22 @@ export default function UserWebPage() {
               <h1>{tr("homeTitle", "Khám phá Sài Gòn")}</h1>
               <p>
                 {tr(
-                  "homeSubtitle",
-                  "Bảy điểm dừng chân, những câu chuyện làm nên thành phố.",
+                  "placesSubtitle",
+                  lang === "vi"
+                    ? `${places.length} địa danh được tải từ PostgreSQL.`
+                    : `${places.length} landmarks loaded from PostgreSQL.`,
                 )}
               </p>
             </div>
             <div className="count-pill">
-              <strong>{"07"}</strong>{" "}
+              <strong>{String(places.length).padStart(2, "0")}</strong>{" "}
               <span>{tr("placesCount", "địa danh nổi bật")}</span>
             </div>
           </div>
           <div className="explore-layout">
             <aside className="map-column">
               <DesktopMap
+                places={places}
                 lang={lang}
                 tr={tr}
                 currentPlace={currentPlace}
@@ -216,6 +337,7 @@ export default function UserWebPage() {
           <div className="detail-layout">
             <aside className="detail-side">
               <DesktopMap
+                places={places}
                 lang={lang}
                 tr={tr}
                 currentPlace={currentPlace}
@@ -309,7 +431,7 @@ export default function UserWebPage() {
               <p>
                 {tr(
                   "aboutDesc",
-                  "Bản mẫu giao diện phục vụ đồ án thuyết minh đa ngôn ngữ. Bản đồ, nội dung chỉ đường và trình phát âm thanh trong mẫu là minh họa; có thể kết nối dữ liệu và dịch vụ thật ở giai đoạn phát triển.",
+                  "Nội dung địa danh được tải từ PostgreSQL; ảnh và audio được phát từ các URL Storage đã lưu trong cơ sở dữ liệu. Bản đồ và lộ trình hiện vẫn là minh họa.",
                 )}
               </p>
             </div>
@@ -323,7 +445,7 @@ export default function UserWebPage() {
         />
         <div className="footer">
           {
-            "SAIGON GUIDE · UI PROTOTYPE · QUẬN 1, TP. HỒ CHÍ MINH · ẢNH: WIKIMEDIA COMMONS"
+            "SAIGON GUIDE · POSTGRESQL + STORAGE · QUẬN 1, TP. HỒ CHÍ MINH"
           }
         </div>
       </div>

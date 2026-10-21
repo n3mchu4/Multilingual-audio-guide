@@ -1,6 +1,5 @@
 import { useRef } from "react";
-export const imgUrl = (url, width = 900) =>
-  `${url}${url.includes("?") ? "&" : "?"}width=${width}`;
+const imgUrl = (url) => url;
 const time = (seconds) => {
   if (!seconds || isNaN(seconds)) return "00:00";
   const totalSeconds = Math.floor(seconds); // Cắt bỏ phần thập phân
@@ -18,7 +17,7 @@ export function SpotList({ places, lang, tr, openDetail, mobile = false }) {
       <div className="spot-photo">
         <img
           loading="lazy"
-          src={imgUrl(place.image, mobile ? 400 : 850)}
+          src={place.image ? imgUrl(place.image) : undefined}
           alt={place.name[lang]}
         />
       </div>
@@ -69,6 +68,8 @@ export function DetailContent({
   mobile = false,
 }) {
   const galleryRef = useRef(null);
+  const audioUrl = place.audioFile?.[lang];
+  const galleryImages = [place.image, ...place.gallery].filter(Boolean);
   return (
     <>
       {!mobile && (
@@ -84,7 +85,7 @@ export function DetailContent({
       )}
       <div className="hero-detail">
         <img
-          src={imgUrl(place.image, mobile ? 600 : 1400)}
+          src={place.image ? imgUrl(place.image) : undefined}
           alt={place.name[lang]}
         />
         <div className="hero-text">
@@ -102,6 +103,7 @@ export function DetailContent({
             type="button"
             className="play-button"
             onClick={audio.toggle}
+            disabled={!audioUrl}
             aria-label={audio.playing ? tr("pause") : tr("listen")}
           >
             {audio.playing ? "Ⅱ" : "▶"}
@@ -111,9 +113,11 @@ export function DetailContent({
             <small>
               {audio.playing
                 ? lang === "vi"
-                  ? "Đang mô phỏng phát audio…"
-                  : "Simulating playback…"
-                : tr("audioDemo")}
+                  ? "Đang phát audio…"
+                  : "Playing audio…"
+                : audioUrl
+                  ? tr("audioDemo")
+                  : lang === "vi" ? "Chưa có tệp audio" : "No audio file configured"}
             </small>
             <div className="audio-progress">
               <span style={{ width: `${audio.progress}%` }} />
@@ -124,9 +128,10 @@ export function DetailContent({
           </div>
         </div>
         <p className="audio-note">
-          {lang === "vi"
-            ? "Trình phát minh họa, chưa có tệp âm thanh."
-            : "Player demo; no audio file connected."}
+          {audio.error || (audioUrl
+            ? audioUrl
+            : lang === "vi" ? "Thêm URL audio vào audio_vi_url/audio_en_url trong PostgreSQL."
+              : "Set audio_vi_url/audio_en_url in PostgreSQL.")}
         </p>
       </section>
       <section className="detail-section">
@@ -168,11 +173,11 @@ export function DetailContent({
           </div>
         )}
         <div className="gallery" ref={galleryRef}>
-          {[place.image, ...place.gallery].map((url, index) => (
+          {galleryImages.map((url, index) => (
             <figure key={`${url}-${index}`} className="gallery-card">
               <img
                 loading="lazy"
-                src={imgUrl(url, mobile ? 300 : 650)}
+                src={imgUrl(url)}
                 alt={`${place.name[lang]} ${index + 1}`}
               />
               {!mobile && <figcaption>{place.name[lang]}</figcaption>}
@@ -196,13 +201,13 @@ export function MiniAudioPlayer({
     <div
       className={`mini-audio-player ${audio.elapsed > 0 || audio.playing ? (mobile ? "" : "visible") : "hidden"}`}
       role="region"
-      aria-label="Trình phát minh họa thu nhỏ"
+      aria-label="Trình phát audio"
     >
       <button
         className="mini-audio-play"
         type="button"
         onClick={audio.toggle}
-        aria-label={audio.playing ? "Pause demo" : "Play demo"}
+        aria-label={audio.playing ? "Pause audio" : "Play audio"}
       >
         {audio.playing ? "Ⅱ" : "▶"}
       </button>
@@ -211,8 +216,8 @@ export function MiniAudioPlayer({
         <small>
           {audio.playing
             ? lang === "vi"
-              ? "Đang mô phỏng audio…"
-              : "Simulating audio…"
+              ? "Đang phát audio…"
+              : "Playing audio…"
             : lang === "vi"
               ? "Đã tạm dừng"
               : "Paused"}

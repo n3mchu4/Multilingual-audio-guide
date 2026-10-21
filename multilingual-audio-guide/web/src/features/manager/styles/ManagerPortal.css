@@ -1,0 +1,89 @@
+.manager-portal {
+  --manager-pink: #d63384;
+  --manager-ink: #203333;
+  --manager-muted: #718481;
+  --manager-line: #f1dfe7;
+  min-height: 100vh;
+  padding: 32px clamp(16px, 4vw, 56px);
+  background: #fff5f9;
+  color: var(--manager-ink);
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+.manager-portal * { box-sizing: border-box; }
+.manager-portal .manager-header,
+.manager-portal .manager-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.manager-portal .manager-header { max-width: 1160px; margin: 0 auto 22px; }
+.manager-portal .manager-eyebrow {
+  margin: 0 0 8px;
+  color: var(--manager-pink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+.manager-portal h1 { margin: 0 0 7px; font-size: clamp(24px, 4vw, 34px); }
+.manager-portal .manager-header p:last-child,
+.manager-portal .manager-section-heading p,
+.manager-portal .manager-history > p { margin: 0; color: var(--manager-muted); font-size: 13px; }
+.manager-portal .manager-card {
+  max-width: 1160px;
+  margin: 0 auto 20px;
+  padding: clamp(18px, 3vw, 30px);
+  border: 1px solid var(--manager-line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(94, 24, 55, .06);
+}
+.manager-portal .manager-section-heading { margin-bottom: 22px; }
+.manager-portal h2 { margin: 0 0 7px; font-size: 19px; }
+.manager-portal .manager-button {
+  border: 1px solid var(--manager-line);
+  border-radius: 10px;
+  padding: 11px 15px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.manager-portal .manager-button.primary { background: var(--manager-pink); border-color: var(--manager-pink); color: #fff; }
+.manager-portal .manager-button.secondary { background: #fff; color: var(--manager-ink); }
+.manager-portal .manager-button:disabled { cursor: not-allowed; opacity: .55; }
+.manager-portal .manager-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.manager-portal .manager-fields label { display: grid; gap: 7px; font-size: 12px; font-weight: 700; }
+.manager-portal .manager-fields .wide { grid-column: 1 / -1; }
+.manager-portal input,
+.manager-portal textarea {
+  width: 100%;
+  border: 1px solid #dce4e2;
+  border-radius: 9px;
+  padding: 10px 11px;
+  color: var(--manager-ink);
+  font: inherit;
+  font-size: 13px;
+}
+.manager-portal textarea { resize: vertical; line-height: 1.55; }
+.manager-portal input:focus,
+.manager-portal textarea:focus { outline: 2px solid #d6338433; border-color: var(--manager-pink); }
+.manager-portal .manager-help { margin: 16px 0 0; color: var(--manager-muted); font-size: 12px; line-height: 1.6; }
+.manager-portal .manager-alert { max-width: 1160px; margin: 0 auto 16px; padding: 12px 15px; border-radius: 10px; font-size: 13px; line-height: 1.5; }
+.manager-portal .manager-alert.error { background: #fff0ef; color: #a83f38; }
+.manager-portal .manager-alert.success { background: #eaf7f1; color: #176548; }
+.manager-portal .manager-alert.warning { background: #fff8e6; color: #7d5b10; }
+.manager-portal .manager-history ul { display: grid; gap: 12px; margin: 16px 0 0; padding: 0; list-style: none; }
+.manager-portal .manager-history li { padding: 13px 15px; border: 1px solid var(--manager-line); border-radius: 10px; }
+.manager-portal .manager-history li strong,
+.manager-portal .manager-history li time { display: block; }
+.manager-portal .manager-history li time { margin-top: 5px; color: var(--manager-muted); font-size: 12px; }
+.manager-portal .manager-history li p { margin: 7px 0 0; font-size: 13px; }
+
+@media (max-width: 680px) {
+  .manager-portal .manager-header,
+  .manager-portal .manager-section-heading { align-items: flex-start; flex-direction: column; }
+  .manager-portal .manager-fields { grid-template-columns: 1fr; }
+  .manager-portal .manager-fields .wide { grid-column: auto; }
+}

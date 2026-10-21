@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { places, mapPoints, busRoutesByPlace } from "../data/desktopData";
+import { mapPoints } from "../data/desktopData";
 
 export default function DesktopMap({
+  places,
   lang,
   tr,
   currentPlace,
@@ -15,8 +16,8 @@ export default function DesktopMap({
   const routePoints = () => {
     if (!route || route[0] === route[1]) return null;
     const [a, b] = route,
-      start = mapPoints[a],
-      end = mapPoints[b],
+      start = mapPoints[a % mapPoints.length],
+      end = mapPoints[b % mapPoints.length],
       midX = (start.x + end.x) / 2;
     return [
       start,
@@ -90,16 +91,16 @@ export default function DesktopMap({
           {places.map((p, i) => (
             <button
               type="button"
-              key={p.name.en}
+              key={p.id}
               className={`map-pin ${i === currentPlace ? "active" : ""}`}
               style={{
-                left: `${mapPoints[i].x - (i === 1 ? 7 : 5)}%`,
-                top: `${mapPoints[i].y - 4}%`,
+                left: `${mapPoints[i % mapPoints.length].x - (i === 1 ? 7 : 5)}%`,
+                top: `${mapPoints[i % mapPoints.length].y - 4}%`,
               }}
               onClick={() => openDetail(i)}
             >
               <span className="pin-icon">•</span>
-              <span>{tr(`place${i}`)}</span>
+              <span>{p.name[lang]}</span>
             </button>
           ))}
           <button
@@ -115,7 +116,7 @@ export default function DesktopMap({
                 <div>
                   <strong>🚌 {tr("busTitle")}</strong>
                   <small>
-                    {tr("busDestination")}: {places[busTarget].name[lang]}
+                    {tr("busDestination")}: {places[busTarget]?.name[lang]}
                   </small>
                 </div>
                 <button
@@ -134,23 +135,21 @@ export default function DesktopMap({
                 aria-label={tr("busDestination")}
               >
                 {places.map((p, i) => (
-                  <option key={p.name.en} value={i}>
+                  <option key={p.id} value={i}>
                     {p.name[lang]}
                   </option>
                 ))}
               </select>
               <div className="bus-route-list">
-                {busRoutesByPlace[busTarget].map((item) => (
-                  <article className="bus-route-item" key={item.no}>
+                {places[busTarget]?.buses?.length ? places[busTarget].buses.map((item, index) => (
+                  <article className="bus-route-item" key={`${item.no}-${item.stop}-${index}`}>
                     <span className="bus-route-number">{item.no}</span>
                     <div>
-                      <strong>{item.name}</strong>
-                      <small>
-                        {tr("busStop")}: {item.stop}
-                      </small>
+                      <strong>{tr("busLine", `Tuyến xe buýt ${item.no}`)}</strong>
+                      <small>{tr("busStop")}: {item.stop}</small>
                     </div>
                   </article>
-                ))}
+                )) : <p>{tr("busEmpty", "Chưa có tuyến xe buýt được lưu.")}</p>}
               </div>
               <p className="bus-disclaimer">{tr("busDisclaimer")}</p>
             </div>
@@ -179,7 +178,7 @@ export default function DesktopMap({
           }}
         >
           {places.map((p, i) => (
-            <option key={p.name.en} value={i}>
+            <option key={p.id} value={i}>
               {p.name[lang]}
             </option>
           ))}
@@ -195,7 +194,7 @@ export default function DesktopMap({
           }}
         >
           {places.map((p, i) => (
-            <option key={p.name.en} value={i}>
+            <option key={p.id} value={i}>
               {p.name[lang]}
             </option>
           ))}

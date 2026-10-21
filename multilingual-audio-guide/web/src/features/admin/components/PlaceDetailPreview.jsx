@@ -1,6 +1,4 @@
 import { useRef } from 'react';
-import { useAdmin } from '../AdminContext';
-import { pic } from '../data/mockData';
 
 function Transcript({ text }) {
   const parts = String(text || '')
@@ -15,33 +13,19 @@ function Transcript({ text }) {
 }
 
 function AudioSection({ label, title, audio }) {
-  const { toast } = useAdmin();
   return (
     <section className="visitor-section">
       <div className="visitor-section-head">
         <h2>{label}</h2>
         <span>◉ 5–7 phút thuyết minh</span>
       </div>
-      <div className="visitor-audio">
-        <button
-          className="visitor-play"
-          type="button"
-          onClick={() => toast('Bản xem trước: chưa kết nối tệp audio để phát trực tiếp.')}
-        >
-          ▶
-        </button>
-        <div className="visitor-audio-info">
-          <strong>Nghe thuyết minh: {title}</strong>
-          <small>{audio ? `Tệp audio: ${audio}` : 'Chưa có tệp audio được đính kèm'}</small>
-          <div className="visitor-progress">
-            <span></span>
-          </div>
-        </div>
-        <div className="visitor-audio-time">00:00 / 03:20</div>
-      </div>
-      <p className="visitor-audio-note">
-        Tệp audio được hiển thị theo đề xuất của Manager; bản HTML minh họa chưa phát âm thanh thật.
-      </p>
+      {audio ? (
+        <audio controls preload="none" src={audio} aria-label={`${label}: ${title}`} style={{ width: '100%' }}>
+          Trình duyệt không hỗ trợ phát audio.
+        </audio>
+      ) : (
+        <p className="visitor-audio-note">Chưa có URL audio trong cơ sở dữ liệu.</p>
+      )}
     </section>
   );
 }
@@ -50,8 +34,8 @@ function AudioSection({ label, title, audio }) {
 export default function PlaceDetailPreview({ place, version }) {
   const galleryRef = useRef(null);
   const v = version || place.current || {};
-  const cover = v.bgImg || pic(place.name).replace('w=240', 'w=1200');
-  const gallery = v.gallery && v.gallery.length ? v.gallery : [pic(place.name).replace('w=240', 'w=650')];
+  const cover = v.bgImg || '';
+  const gallery = v.gallery || [];
   const title = v.heroTitle || place.name;
   const subtitle = v.heroSub || place.district || 'Quận 1, Thành phố Hồ Chí Minh';
   const scrollGallery = (dx) => galleryRef.current?.scrollBy({ left: dx, behavior: 'smooth' });
@@ -119,6 +103,7 @@ export default function PlaceDetailPreview({ place, version }) {
               <figcaption>{title}</figcaption>
             </figure>
           ))}
+          {!gallery.length && <p className="visitor-audio-note">Chưa có ảnh gallery trong cơ sở dữ liệu.</p>}
         </div>
         <div className="visitor-gallery-hint">Lướt ngang để xem thêm ảnh →</div>
       </section>

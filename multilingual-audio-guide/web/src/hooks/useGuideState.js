@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useAudioPlayer } from "./useAudioPlayer";
 
 // Local UI state; không sửa document/window để các trang có thể cùng tồn tại.
-export function useGuideState(words, places) {
+export function useGuideState(words, places, onPlaybackStarted) {
   const [lang, setLang] = useState("vi");
   const [welcomeLang, setWelcomeLang] = useState("vi");
   const [entered, setEntered] = useState(false);
@@ -13,7 +13,10 @@ export function useGuideState(words, places) {
   // Nếu chưa có file của ngôn ngữ đang chọn thì dùng tạm bản tiếng Việt.
   const audioFile = places[currentPlace]?.audioFile;
   const audioSrc = audioFile?.[lang] ?? audioFile?.vi ?? "";
-  const audio = useAudioPlayer(audioSrc);
+  const audio = useAudioPlayer(audioSrc, () => onPlaybackStarted?.({
+    landmarkId: places[currentPlace]?.id,
+    language: lang,
+  }));
   const tr = (key, fallback = key) =>
     words[lang]?.[key] ?? words.vi?.[key] ?? fallback;
   const showPage = (next) => {

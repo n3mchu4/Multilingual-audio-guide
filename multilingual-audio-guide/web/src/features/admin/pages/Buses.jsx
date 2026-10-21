@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAdmin } from '../AdminContext';
-import { pic } from '../data/mockData';
 
 export default function Buses() {
   const { places, stats, openModal, removeBus } = useAdmin();
@@ -39,7 +38,7 @@ export default function Buses() {
           data.map((p) => (
             <div className="bus-card" key={p.id}>
               <div className="bus-card-head">
-                <img src={pic(p.name)} alt="" onError={(e) => (e.currentTarget.style.opacity = '.35')} />
+                {p.current?.bgImg && <img src={p.current.bgImg} alt="" onError={(e) => (e.currentTarget.style.opacity = '.35')} />}
                 <div style={{ flex: 1 }}>
                   <h3>{p.name}</h3>
                   <p>
@@ -52,8 +51,8 @@ export default function Buses() {
               </div>
               <div className="bus-card-body">
                 {p.buses.length ? (
-                  p.buses.map((b, i) => (
-                    <div className="bus-route" key={i}>
+                  p.buses.map((b) => (
+                    <div className="bus-route" key={b.id}>
                       <div className="route-info">
                         <span className="route-no">{b.no}</span>
                         <div>
@@ -61,7 +60,7 @@ export default function Buses() {
                           <small>Trạm xuống: {b.stop}</small>
                         </div>
                       </div>
-                      <button className="btn small danger" onClick={() => removeBus(p.id, i)}>
+                      <button className="btn small danger" onClick={() => removeBus(b.id)}>
                         Xóa
                       </button>
                     </div>

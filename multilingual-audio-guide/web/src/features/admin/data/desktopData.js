@@ -1,4 +1,4 @@
-// Dữ liệu mẫu giữ lại từ HTML gốc; chưa kết nối API.
+
 export const places = [
   {
     name: {
@@ -80,7 +80,7 @@ export const places = [
       en: "Independence Palace, also known as Reunification Palace, holds a distinctive place in modern Vietnamese history. The current building combines modern design with traditional elements and sits within spacious, tree-lined grounds. Inside are reception rooms, meeting rooms and preserved spaces that introduce visitors to key periods in the country’s history. A visit offers context for the events associated with the site and its role in Vietnam’s historical story.",
     },
     image:
-      "https://commons.wikimedia.org/wiki/Special:FilePath/Independence%20Palace%20(11434509833).jpg",
+      "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Independence_Palace.jpg",
     gallery: [
       "https://commons.wikimedia.org/wiki/Special:FilePath/Independence%20Palace%20(13663546815).jpg",
       "https://commons.wikimedia.org/wiki/Special:FilePath/Independence%20Palace%20(13663635493).jpg",
@@ -109,7 +109,7 @@ export const places = [
       en: "Notre-Dame Cathedral Basilica of Saigon is one of the city center’s best-known architectural landmarks. Its red-brick exterior, twin bell towers and open forecourt create a distinctive silhouette. The surrounding area meets several important streets and sits close to the Central Post Office and Book Street. Visitors can admire exterior details, learn about the building’s history and experience the meeting of historic architecture and modern city life.",
     },
     image:
-      "https://commons.wikimedia.org/wiki/Special:FilePath/20190923%20Notre-Dame%20Cathedral%20Basilica%20of%20Saigon-1.jpg",
+      "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Notre-Dame_Cathedral_Basilica_of_Saigon-1.jpg",
     gallery: [
       "https://commons.wikimedia.org/wiki/Special:FilePath/20190923%20Notre-Dame%20Cathedral%20Basilica%20of%20Saigon-2.jpg",
       "https://commons.wikimedia.org/wiki/Special:FilePath/20190923%20Notre-Dame%20Cathedral%20Basilica%20of%20Saigon-3.jpg",

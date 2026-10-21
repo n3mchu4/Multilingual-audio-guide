@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
-const API_BASE = (
-  import.meta.env.VITE_GUIDE_API_URL || 'http://localhost:3002'
-).replace(/\/$/, '')
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
 export default function PlaceDetail() {
   const { id } = useParams()
@@ -131,6 +129,41 @@ export default function PlaceDetail() {
               {place.transcript || 'Chưa có bài thuyết minh.'}
             </div>
           </section>
+
+          {place.audio_en_url && (
+            <section>
+              <h2>Nghe thuyết minh tiếng Anh</h2>
+              <audio controls preload="metadata" src={place.audio_en_url} style={{ width: '100%' }}>
+                Trình duyệt không hỗ trợ phát audio.
+              </audio>
+            </section>
+          )}
+
+          {place.transcript_en && (
+            <section>
+              <h2>English transcript</h2>
+              <div style={{ whiteSpace: 'pre-line', lineHeight: 1.8, overflowWrap: 'anywhere' }}>
+                {place.transcript_en}
+              </div>
+            </section>
+          )}
+
+          {place.images?.length > 0 && (
+            <section>
+              <h2>Hình ảnh</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                {place.images.map((image) => (
+                  <img
+                    key={image.image_id}
+                    src={image.image_url}
+                    alt={place.title}
+                    loading="lazy"
+                    style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 12 }}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
         </>
       )}
     </main>

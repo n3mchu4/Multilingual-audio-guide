@@ -104,7 +104,7 @@ export function PlaceEditorModal({ placeId }) {
           <input value={district} onChange={(e) => setDistrict(e.target.value)} />
         </div>
         <div className="form-field full">
-          <label>Nội dung thuyết minh đang hiển thị</label>
+          <label>Mô tả địa danh (tiếng Việt)</label>
           <textarea value={content} onChange={(e) => setContent(e.target.value)} />
         </div>
       </div>
