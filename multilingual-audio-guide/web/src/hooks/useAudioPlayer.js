@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export function useAudioPlayer(src) {
+export function useAudioPlayer(src, onPlaybackStarted) {
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -64,7 +64,10 @@ export function useAudioPlayer(src) {
     } else {
       setError('');
       audioRef.current.play()
-        .then(() => setPlaying(true))
+        .then(() => {
+          setPlaying(true);
+          onPlaybackStarted?.();
+        })
         .catch(() => {
           setPlaying(false);
           setError('Không thể tải hoặc phát URL audio đã cấu hình.');

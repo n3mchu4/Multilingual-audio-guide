@@ -1,4 +1,4 @@
-// Dữ liệu mẫu giữ lại từ HTML gốc; chưa kết nối API.
+
 export const places = [
   {
     name: {
@@ -35,6 +35,7 @@ export const places = [
       en: "Bach Dang Wharf",
     },
      audioFile: {
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/bach-dang-wharf/vi.mp3",
       en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/bach-dang-wharf/en.mp3"
     },
     short: {
@@ -63,7 +64,8 @@ export const places = [
       en: "Independence Palace",
     },
     audioFile: {
-      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/vi.mp3"
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/independence-place/en.mp3"
     },
     short: {
       vi: "Dấu mốc quan trọng của lịch sử hiện đại",
@@ -78,7 +80,7 @@ export const places = [
       en: "Independence Palace, also known as Reunification Palace, holds a distinctive place in modern Vietnamese history. The current building combines modern design with traditional elements and sits within spacious, tree-lined grounds. Inside are reception rooms, meeting rooms and preserved spaces that introduce visitors to key periods in the country’s history. A visit offers context for the events associated with the site and its role in Vietnam’s historical story.",
     },
     image:
-      "https://commons.wikimedia.org/wiki/Special:FilePath/Independence%20Palace%20(11434509833).jpg",
+      "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Independence_Palace.jpg",
     gallery: [
       "https://commons.wikimedia.org/wiki/Special:FilePath/Independence%20Palace%20(13663546815).jpg",
       "https://commons.wikimedia.org/wiki/Special:FilePath/Independence%20Palace%20(13663635493).jpg",
@@ -91,7 +93,8 @@ export const places = [
       en: "Notre-Dame Cathedral Basilica",
     },
      audioFile: {
-      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/notre-dame/vi.mp3"
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/notre-dame/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/notre-dame/en.mp3"
     },
     short: {
       vi: "Dấu ấn kiến trúc giữa trung tâm thành phố",
@@ -106,7 +109,7 @@ export const places = [
       en: "Notre-Dame Cathedral Basilica of Saigon is one of the city center’s best-known architectural landmarks. Its red-brick exterior, twin bell towers and open forecourt create a distinctive silhouette. The surrounding area meets several important streets and sits close to the Central Post Office and Book Street. Visitors can admire exterior details, learn about the building’s history and experience the meeting of historic architecture and modern city life.",
     },
     image:
-      "https://commons.wikimedia.org/wiki/Special:FilePath/20190923%20Notre-Dame%20Cathedral%20Basilica%20of%20Saigon-1.jpg",
+      "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Notre-Dame_Cathedral_Basilica_of_Saigon-1.jpg",
     gallery: [
       "https://commons.wikimedia.org/wiki/Special:FilePath/20190923%20Notre-Dame%20Cathedral%20Basilica%20of%20Saigon-2.jpg",
       "https://commons.wikimedia.org/wiki/Special:FilePath/20190923%20Notre-Dame%20Cathedral%20Basilica%20of%20Saigon-3.jpg",
@@ -119,7 +122,8 @@ export const places = [
       en: "Saigon Central Post Office",
     },
     audioFile: {
-      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/center-post-office/vi.mp3"
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/center-post-office/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/center-post-office/en.mp3"
     },
     short: {
       vi: "Vẻ đẹp cổ điển và nhịp sống đô thị",
@@ -147,7 +151,8 @@ export const places = [
       en: "Nguyen Van Binh Book Street",
     },
     audioFile: {
-      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/vi.mp3"
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/en.mp3"
     },
     short: {
       vi: "Góc nhỏ dành cho người yêu sách",
@@ -175,7 +180,8 @@ export const places = [
       en: "Saigon Opera House",
     },
     audioFile: {
-      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/operahouse/vi.mp3"
+      vi: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/operahouse/vi.mp3",
+      en: "https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/operahouse/en.mp3"
     },
     short: {
       vi: "Nét duyên nghệ thuật giữa phố thị",
@@ -242,7 +248,7 @@ export const words = {
     selectLanguage: "Sử dụng",
     aboutSettings: "Về Saigon Guide",
     aboutDesc:
-      "Nội dung địa danh được tải từ PostgreSQL; ảnh và audio được phát từ các URL Storage đã lưu trong cơ sở dữ liệu. Bản đồ và lộ trình hiện vẫn là minh họa.",
+      "Bản mẫu giao diện phục vụ đồ án thuyết minh đa ngôn ngữ. Bản đồ, nội dung chỉ đường và trình phát âm thanh trong mẫu là minh họa; có thể kết nối dữ liệu và dịch vụ thật ở giai đoạn phát triển.",
     routeResultTitle: "Lộ trình gợi ý",
     busConnect: "Kết nối bus",
     busTitle: "Các tuyến xe buýt gần điểm đến",
@@ -315,7 +321,7 @@ export const words = {
     selectLanguage: "Use English",
     aboutSettings: "About Saigon Guide",
     aboutDesc:
-      "Landmark content is loaded from PostgreSQL; images and audio use Storage URLs saved in the database. The map and directions are still illustrative.",
+      "This is a UI prototype for a multilingual audio guide project. The map, directions and audio player are illustrative and can be connected to real data and services during development.",
     routeResultTitle: "Suggested route",
     busConnect: "Connect bus",
     busTitle: "Bus routes near destination",

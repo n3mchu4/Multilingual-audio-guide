@@ -116,6 +116,38 @@ const server=http.createServer(async (req,res)=>{
     const url=new URL(req.url,'http://localhost');
     if (url.pathname.startsWith('/media/')) {await serveMedia(req,res,url.pathname);return;}
     if (req.method==='HEAD') {res.writeHead(405);res.end();return;}
+    if (req.method==='POST' && url.pathname==='/api/analytics/visitors') {
+      const body=await readJson(req);
+      const visitorId=String(body?.visitorId ?? '');
+      if (!uuidPattern.test(visitorId)) {sendJson(res,400,{error:'A valid visitorId is required'});return;}
+      await query(`INSERT INTO public.analytics_visitors(visitor_id)
+        VALUES ($1)
+        ON CONFLICT (visitor_id) DO UPDATE SET last_seen_at=now()`,[visitorId]);
+      sendJson(res,201,{ok:true});return;
+    }
+    if (req.method==='POST' && url.pathname==='/api/analytics/listens') {
+      const body=await readJson(req);
+      const visitorId=String(body?.visitorId ?? '');
+      const landmarkId=String(body?.landmarkId ?? '');
+      const language=String(body?.language ?? '');
+      if (!uuidPattern.test(visitorId) || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(landmarkId)
+          || !['vi','en'].includes(language)) {
+        sendJson(res,400,{error:'A valid visitorId, landmarkId and language are required'});return;
+      }
+      const {rowCount}=await query(`WITH selected_landmark AS (
+          SELECT landmark_id FROM public.landmarks WHERE landmark_id=$2
+        ), visitor AS (
+          INSERT INTO public.analytics_visitors(visitor_id)
+          SELECT $1 WHERE EXISTS (SELECT 1 FROM selected_landmark)
+          ON CONFLICT (visitor_id) DO UPDATE SET last_seen_at=now()
+          RETURNING visitor_id
+        )
+        INSERT INTO public.audio_listens(visitor_id,landmark_id,language)
+        SELECT visitor.visitor_id,selected_landmark.landmark_id,$3
+        FROM visitor CROSS JOIN selected_landmark`,[visitorId,landmarkId,language]);
+      if (!rowCount) {sendJson(res,404,{error:'Landmark not found'});return;}
+      sendJson(res,201,{ok:true});return;
+    }
     if (req.method==='POST' && url.pathname==='/api/auth/login') {
       const body=await readJson(req);
       const username=String(body?.unfid ?? '').trim().toLowerCase();

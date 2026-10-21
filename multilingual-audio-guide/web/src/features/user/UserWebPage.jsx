@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGuideState } from "../../hooks/useGuideState";
 import {
   SpotList,
@@ -9,6 +9,36 @@ import {
 import DesktopMap from "../admin/components/DesktopMap";
 import { words } from "../admin/data/desktopData";
 import "./UserWebPage.css";
+
+const VISITOR_ID_KEY = "saigon-audio-guide.visitor-id";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function createVisitorId() {
+  const bytes = new Uint8Array(16);
+  if (globalThis.crypto?.getRandomValues) {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    bytes.forEach((_, index) => {
+      bytes[index] = Math.floor(Math.random() * 256);
+    });
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function getVisitorId() {
+  try {
+    const existingId = window.localStorage.getItem(VISITOR_ID_KEY);
+    if (existingId && UUID_PATTERN.test(existingId)) return existingId;
+    const visitorId = createVisitorId();
+    window.localStorage.setItem(VISITOR_ID_KEY, visitorId);
+    return visitorId;
+  } catch {
+    return createVisitorId();
+  }
+}
 
 function mapLandmark(landmark) {
   return {
@@ -32,6 +62,40 @@ export default function UserWebPage() {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const visitorIdRef = useRef("");
+
+  useEffect(() => {
+    const visitorId = getVisitorId();
+    visitorIdRef.current = visitorId;
+    void fetch("/api/analytics/visitors", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitorId }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+      })
+      .catch((error) => {
+        console.error("Could not record visitor analytics:", error);
+      });
+  }, []);
+
+  const recordAudioListen = useCallback(({ landmarkId, language }) => {
+    const visitorId = visitorIdRef.current;
+    if (!visitorId || !landmarkId) return;
+
+    void fetch("/api/analytics/listens", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitorId, landmarkId, language }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+      })
+      .catch((error) => {
+        console.error("Could not record audio listen:", error);
+      });
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -68,7 +132,7 @@ export default function UserWebPage() {
     openDetail,
     enterApp,
     audio,
-  } = useGuideState(words, places);
+  } = useGuideState(words, places, recordAudioListen);
   if (loading || loadError || places.length === 0) {
     return (
       <main className="sg-web" style={{ padding: 32 }}>

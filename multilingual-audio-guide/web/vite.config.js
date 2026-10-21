@@ -9,6 +9,7 @@ export default defineConfig({
     alias: { '@shared': fileURLToPath(new URL('../shared', import.meta.url)) },
   },
   server: {
+    host: true,
     fs: { allow: ['..'] }, // cho phép import thư mục shared/ nằm ngoài web/
     proxy: {
       '/api': 'http://127.0.0.1:3002',
