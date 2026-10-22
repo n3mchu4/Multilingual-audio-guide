@@ -4,6 +4,23 @@ Mỗi câu có `start`, `end` (số giây từ đầu audio, cho phép số th�
 và `text`. Mốc VI và EN độc lập, không dùng chung vì tốc độ đọc khác nhau.
 Khoảng trống giữa hai câu được phép; thời điểm kết thúc không thuộc câu đó.
 
+## Audio và ảnh trên Supabase
+
+Audio/ảnh tiếp tục lưu trên Supabase Storage. PostgreSQL chỉ lưu URL media,
+transcript và các mốc thời gian; không cần chuyển file MP3 về máy chủ API.
+`audio_url` trong JSON phải là URL file đang lưu ở `audio_vi_url` hoặc
+`audio_en_url`, không phải URL trang quản lý `supabase.com/dashboard/...`.
+Trong bucket audio, chọn file và lấy URL file. Ví dụ URL đã xuất hiện trong repo:
+
+```text
+https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/ben-thanh-market/vi.mp3
+```
+
+Chỉ dùng URL này khi đúng file đang cấu hình trong DB. Web/mobile phát file
+trực tiếp từ URL đó và dùng thời gian player để chọn câu. Ảnh không tham gia
+vào việc căn mốc transcript. Không cần đưa khóa quản trị Supabase vào JSON
+hoặc frontend. Không có thay đổi hay thao tác upload/xóa trong bucket.
+
 ## 1. Cập nhật PostgreSQL
 
 Chạy tại thư mục `multilingual-audio-guide`, bằng tài khoản quản trị DB:
