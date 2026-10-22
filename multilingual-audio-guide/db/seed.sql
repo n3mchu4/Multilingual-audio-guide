@@ -66,3 +66,49 @@ INSERT INTO public.landmark_images (landmark_id, image_url, sort_order) VALUES
   ('nguyen-van-binh-book-street',      'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/book-street/hl1.jpg',  0)
   
 ON CONFLICT (landmark_id, image_url) DO NOTHING;
+
+# phân thêm ảnh nổi bật
+INSERT INTO public.landmark_images (landmark_id, image_url, sort_order) VALUES
+  -- 1. Chợ Bến Thành
+  ('ben-thanh-market',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/ben-thanh-market/hl3.jpg', 0),
+  ('ben-thanh-market',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/ben-thanh-market/hl2.jpg', 1),
+
+  -- 2. Bưu điện Trung tâm
+  ('central-post-office',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Saigon_central_Post/buudienhl2.jpg', 0),
+  ('central-post-office',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Saigon_central_Post/buudienhl3.jpg', 1),
+
+  -- 3. Dinh Độc Lập (đã có ảnh sort_order 0 nên bắt đầu từ 1)
+  ('independence-palace',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/independence_palce/dinhdoclaphl3.jpg', 0),
+
+  ('independence-palace',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/independence_palce/dinhdoclaphl1.jpg', 1),
+
+  -- 4. Nhà thờ Đức Bà
+  ('notre-dame-cathedral',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Notre-Dame_Cathedral_Basilica_of_Saigon/nhathohl2.jpg', 0),
+  ('notre-dame-cathedral',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Notre-Dame_Cathedral_Basilica_of_Saigon/nhathohl3.jpg', 1),
+
+  -- 5. Nhà hát Thành phố
+  ('saigon-opera-house',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Ho_Chi_Minh_City_Opera_House/nhahatlonhl2.jpg', 0),
+  ('saigon-opera-house',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/Ho_Chi_Minh_City_Opera_House/nhahatlonhl3.jpg', 1),
+
+  -- 6. Bến Bạch Đằng (dữ liệu thật từ desktopData.js)
+  ('bach-dang-wharf',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/bach-dang-wharf/hl2.webp', 0),
+  ('bach-dang-wharf',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/bach-dang-wharf/hl3.jpg', 1),
+
+  -- 7. Phố sách Nguyễn Văn Bình
+  ('nguyen-van-binh-book-street',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/book-street/hl2.jpg', 0),
+  ('nguyen-van-binh-book-street',
+   'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/book-street/hl3.jpg', 1)
+ON CONFLICT (landmark_id, image_url) DO NOTHING;
