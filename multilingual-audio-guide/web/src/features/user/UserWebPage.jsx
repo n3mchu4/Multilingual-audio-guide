@@ -47,6 +47,10 @@ function mapLandmark(landmark) {
     audioFile: { vi: landmark.audio_vi_url, en: landmark.audio_en_url },
     short: { vi: landmark.subtitle_vi, en: landmark.subtitle_en },
     desc: { vi: landmark.description_vi, en: landmark.description_en },
+    transcriptCues: {
+      vi: landmark.transcript_cues_vi || [],
+      en: landmark.transcript_cues_en || [],
+    },
     history: {
       vi: landmark.transcript_vi || landmark.description_vi,
       en: landmark.transcript_en || landmark.description_en,

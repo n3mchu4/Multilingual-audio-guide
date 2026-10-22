@@ -1,3 +1,13 @@
+# Mốc thời gian transcript
+
+API danh sách và chi tiết địa danh trả `transcript_cues_vi`,
+`transcript_cues_en` và `transcript_cues` theo `lang`.
+Mỗi mốc là `{ start, end, text }`, thời gian tính bằng giây với
+`start <= currentTime < end`. Chưa có mốc: `[]`.
+Trước khi chạy API mới, áp dụng migration
+`db/migrations/20261022_transcript_timing.sql` cho DB hiện có.
+Xem [hướng dẫn nhập mốc và tích hợp web/mobile](transcript-timing.md).
+
 # Thống kê khách truy cập và lượt nghe
 
 Trước khi chạy API trên cơ sở dữ liệu hiện có, áp dụng migration
