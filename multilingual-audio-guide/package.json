@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview web",
     "dev:api": "node db/node/demo-api.js",
-    "test": "node --test \"functions/src/**/*.test.js\""
+    "test": "node --test \"functions/src/**/*.test.js\" \"db/node/*.test.js\""
   },
   "dependencies": {
     "i18next": "^26.4.2",

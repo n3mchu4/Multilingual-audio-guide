@@ -1,5 +1,7 @@
 # Multilingual Automatic Audio/Video Narration System
 
+Hướng dẫn mới: [Chuẩn bị mốc thời gian transcript cho web/mobile](multilingual-audio-guide/docs/transcript-timing.md).
+
 An application that automatically generates multilingual narration for audio/video content. The system transcribes speech from the source file, translates it into a target language, and synthesizes a new narration track, with synchronized bilingual subtitles.
 
 ## Tech Stack

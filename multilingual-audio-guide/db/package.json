@@ -8,12 +8,17 @@
     "demo:api": "node node/demo-api.js",
     "import:text": "node node/import-transcript.js",
     "set:media": "node node/set-media.js",
-    "create:admin": "node node/create-admin.js"
+    "create:admin": "node node/create-admin.js",
+    "prepare:timing": "node node/prepare-timing.js",
+    "import:timing": "node node/import-timing.js",
+    "test:timing": "node --test node/transcript-timing.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "dotenv": "^16.4.7",
     "pg": "^8.13.1"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

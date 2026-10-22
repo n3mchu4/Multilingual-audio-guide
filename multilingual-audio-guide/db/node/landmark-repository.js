@@ -9,9 +9,11 @@ export async function listLandmarks(language = 'vi') {
   const { rows } = await query(`SELECT landmark_id AS id,
     title_vi, title_en, subtitle_vi, subtitle_en,
     description_vi, description_en, transcript_vi, transcript_en,
+    transcript_cues_vi, transcript_cues_en,
     latitude, longitude, background_image_url, audio_vi_url, audio_en_url,
     title_${lang} AS title, subtitle_${lang} AS subtitle,
     description_${lang} AS description, transcript_${lang} AS transcript,
+    transcript_cues_${lang} AS transcript_cues,
     audio_${lang}_url AS audio_url, $1::text AS language
     FROM public.landmarks ORDER BY landmark_id`, [language]);
   const { rows: images } = await query(`SELECT landmark_id, image_url
@@ -45,9 +47,11 @@ export async function getLandmark(id, language = 'vi') {
   const { rows } = await query(`SELECT landmark_id AS id,
     title_vi, title_en, subtitle_vi, subtitle_en,
     description_vi, description_en, transcript_vi, transcript_en,
+    transcript_cues_vi, transcript_cues_en,
     audio_vi_url, audio_en_url,
     title_${lang} AS title, subtitle_${lang} AS subtitle,
     description_${lang} AS description, transcript_${lang} AS transcript,
+    transcript_cues_${lang} AS transcript_cues,
     latitude, longitude, background_image_url, audio_${lang}_url AS audio_url,
     $2::text AS language FROM public.landmarks WHERE landmark_id = $1`, [id, language]);
   if (!rows.length) return null;
