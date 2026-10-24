@@ -28,3 +28,23 @@ export function findActiveTranscriptCue(cues, currentTimeSeconds) {
   if (!Array.isArray(cues) || !Number.isFinite(currentTimeSeconds) || currentTimeSeconds < 0) return -1;
   return cues.findIndex((cue) => currentTimeSeconds >= cue.start && currentTimeSeconds < cue.end);
 }
+
+// Prefer measured cues; a labelled estimate keeps transcripts usable before alignment.
+export function buildTranscriptTimeline(text, cues, duration) {
+  try {
+    return { cues: validateTranscriptCues(cues, text), estimated: false };
+  } catch {
+    const sentences = (text || '').split(/(?<=[.!?])\s+|\n+/u).map(s => s.trim()).filter(Boolean);
+    if (!Number.isFinite(duration) || duration <= 0) return { cues: [], estimated: true };
+    const length = sentences.reduce((sum, s) => sum + s.length, 0) || 1;
+    let end = 0;
+    return {
+      estimated: true,
+      cues: sentences.map((sentence, index) => {
+        const start = end;
+        end = index === sentences.length - 1 ? duration : end + sentence.length / length * duration;
+        return { text: sentence, start, end };
+      }),
+    };
+  }
+}

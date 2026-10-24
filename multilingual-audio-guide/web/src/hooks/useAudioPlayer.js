@@ -1,18 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 
-<<<<<<< HEAD
 export function useAudioPlayer(src, onPlay) {
-=======
-export function useAudioPlayer(src, onPlaybackStarted) {
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef(null);
   const onPlayRef = useRef(onPlay);
-  onPlayRef.current = onPlay;
+  useEffect(() => { onPlayRef.current = onPlay; }, [onPlay]);
   const [error, setError] = useState('');
+  const [source, setSource] = useState(src);
 
   useEffect(() => {
     // Reset playback state whenever the selected storage URL changes.
@@ -22,6 +19,7 @@ export function useAudioPlayer(src, onPlaybackStarted) {
     setDuration(0);
     setProgress(0);
     setError('');
+    setSource(src);
 
     const audio = new Audio();
     if (src) audio.src = src;
@@ -49,28 +47,35 @@ export function useAudioPlayer(src, onPlaybackStarted) {
 
     audio.addEventListener("loadedmetadata", onLoadedMetadata);
     audio.addEventListener("timeupdate", onTimeUpdate);
+    const onPause = () => setPlaying(false);
+    audio.addEventListener("pause", onPause);
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("error", onError);
 
     // Dọn dẹp khi component unmount hoặc src thay đổi
     return () => {
+      audioRef.current = null;
       audio.pause();
       audio.removeEventListener("loadedmetadata", onLoadedMetadata);
       audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("pause", onPause);
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
     };
   }, [src]);
 
   const play = () => {
-    if (!audioRef.current) return Promise.resolve();
+    if (!src || !audioRef.current) return Promise.resolve();
     setError('');
-    return audioRef.current.play()
+    const audio = audioRef.current;
+    return audio.play()
       .then(() => {
+        if (audioRef.current !== audio) return;
         setPlaying(true);
         onPlayRef.current?.();
       })
       .catch(() => {
+        if (audioRef.current !== audio) return;
         setPlaying(false);
         setError('Không thể tải hoặc phát URL audio đã cấu hình.');
       });
@@ -86,20 +91,7 @@ export function useAudioPlayer(src, onPlaybackStarted) {
     if (playing) {
       pause();
     } else {
-<<<<<<< HEAD
       play();
-=======
-      setError('');
-      audioRef.current.play()
-        .then(() => {
-          setPlaying(true);
-          onPlaybackStarted?.();
-        })
-        .catch(() => {
-          setPlaying(false);
-          setError('Không thể tải hoặc phát URL audio đã cấu hình.');
-        });
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
     }
   };
 
@@ -125,12 +117,13 @@ export function useAudioPlayer(src, onPlaybackStarted) {
     }
   };
 
+  const matchesSource = source === src;
   return {
-    playing,
-    elapsed,
-    duration,
-    progress,
-    error,
+    playing: matchesSource && playing,
+    elapsed: matchesSource ? elapsed : 0,
+    duration: matchesSource ? duration : 0,
+    progress: matchesSource ? progress : 0,
+    error: matchesSource ? error : '',
     play,
     pause,
     toggle,

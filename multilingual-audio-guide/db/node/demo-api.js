@@ -123,27 +123,31 @@ const server=http.createServer(async (req,res)=>{
     const url=new URL(req.url,'http://localhost');
     if (url.pathname.startsWith('/media/')) {await serveMedia(req,res,url.pathname);return;}
     if (req.method==='HEAD') {res.writeHead(405);res.end();return;}
-<<<<<<< HEAD
-    if (url.pathname==='/api/analytics/ping') {
-      const body = req.method==='POST' ? await readJson(req).catch(()=>({})) : {};
-      const activeUsers = recordPing(body?.sessionId, body?.platform ?? 'web', body?.path ?? '/');
-      sendJson(res, 200, { ok: true, activeUsers });
-      return;
+    if (req.method==='POST' && url.pathname==='/api/analytics/ping') {
+      const body = await readJson(req);
+      if (typeof body?.sessionId !== 'string' || typeof body?.visitorId !== 'string'
+          || !/^[a-zA-Z0-9_-]{8,100}$/.test(body?.sessionId ?? '')
+          || !/^[a-zA-Z0-9_-]{8,100}$/.test(body?.visitorId ?? '')
+          || !['web','mobile'].includes(body?.platform)
+          || typeof body?.active !== 'boolean') {
+        sendJson(res,400,{error:'Valid sessionId, visitorId, platform and active are required'});return;
+      }
+      sendJson(res,200,{ok:true,activeUsers:recordPing(body)});return;
     }
     if (req.method==='POST' && url.pathname==='/api/analytics/play') {
-      const body = await readJson(req).catch(()=>({}));
-      const result = await recordAudioPlay({
-        landmarkId: String(body?.landmarkId ?? ''),
-        lang: String(body?.lang ?? 'vi'),
-        title: String(body?.title ?? ''),
-      });
-      sendJson(res, 200, { ok: true, ...result });
-      return;
+      const body = await readJson(req);
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(body?.landmarkId ?? '')
+          || !['vi','en'].includes(body?.lang)
+          || (body?.visitorId != null && !uuidPattern.test(body.visitorId))) {
+        sendJson(res,400,{error:'Valid landmarkId and lang are required'});return;
+      }
+      const saved = await recordAudioPlay(body);
+      sendJson(res,saved ? 201 : 404,saved ? {ok:true} : {error:'Landmark not found'});return;
     }
     if (req.method==='GET' && url.pathname==='/api/analytics/stats') {
-      sendJson(res, 200, { ok: true, data: getAnalyticsData() });
-      return;
-=======
+      if (!await authenticatedAdmin(req)) {sendJson(res,401,{error:'Admin authentication required'});return;}
+      sendJson(res,200,{data:await getAnalyticsData()});return;
+    }
     if (req.method==='POST' && url.pathname==='/api/analytics/visitors') {
       const body=await readJson(req);
       const visitorId=String(body?.visitorId ?? '');
@@ -175,7 +179,6 @@ const server=http.createServer(async (req,res)=>{
         FROM visitor CROSS JOIN selected_landmark`,[visitorId,landmarkId,language]);
       if (!rowCount) {sendJson(res,404,{error:'Landmark not found'});return;}
       sendJson(res,201,{ok:true});return;
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
     }
     if (req.method==='POST' && url.pathname==='/api/auth/login') {
       const body=await readJson(req);

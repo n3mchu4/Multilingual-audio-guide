@@ -1,9 +1,6 @@
-<<<<<<< HEAD
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-=======
 import { useCallback, useEffect, useRef, useState } from "react";
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
+import { API_BASE, getVisitorId } from '../../services/analytics';
+import { Link } from "react-router-dom";
 import { useGuideState } from "../../hooks/useGuideState";
 import {
   SpotList,
@@ -14,36 +11,6 @@ import {
 import DesktopMap from "../admin/components/DesktopMap";
 import { words } from "../admin/data/desktopData";
 import "./UserWebPage.css";
-
-const VISITOR_ID_KEY = "saigon-audio-guide.visitor-id";
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function createVisitorId() {
-  const bytes = new Uint8Array(16);
-  if (globalThis.crypto?.getRandomValues) {
-    globalThis.crypto.getRandomValues(bytes);
-  } else {
-    bytes.forEach((_, index) => {
-      bytes[index] = Math.floor(Math.random() * 256);
-    });
-  }
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-function getVisitorId() {
-  try {
-    const existingId = window.localStorage.getItem(VISITOR_ID_KEY);
-    if (existingId && UUID_PATTERN.test(existingId)) return existingId;
-    const visitorId = createVisitorId();
-    window.localStorage.setItem(VISITOR_ID_KEY, visitorId);
-    return visitorId;
-  } catch {
-    return createVisitorId();
-  }
-}
 
 function mapLandmark(landmark) {
   return {
@@ -76,7 +43,7 @@ export default function UserWebPage() {
   useEffect(() => {
     const visitorId = getVisitorId();
     visitorIdRef.current = visitorId;
-    void fetch("/api/analytics/visitors", {
+    void fetch(`${API_BASE}/api/analytics/visitors`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ visitorId }),
@@ -93,7 +60,7 @@ export default function UserWebPage() {
     const visitorId = visitorIdRef.current;
     if (!visitorId || !landmarkId) return;
 
-    void fetch("/api/analytics/listens", {
+    void fetch(`${API_BASE}/api/analytics/listens`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ visitorId, landmarkId, language }),
@@ -110,7 +77,7 @@ export default function UserWebPage() {
     const controller = new AbortController();
     async function loadPlaces() {
       try {
-        const response = await fetch("/api/landmarks?lang=vi", { signal: controller.signal });
+        const response = await fetch(`${API_BASE}/api/landmarks?lang=vi`, { signal: controller.signal });
         if (!response.ok) throw new Error("Không tải được địa danh từ PostgreSQL.");
         const result = await response.json();
         if (!Array.isArray(result.data)) throw new Error("API trả về danh sách địa danh không hợp lệ.");
@@ -127,28 +94,6 @@ export default function UserWebPage() {
     return () => controller.abort();
   }, []);
 
-  useEffect(() => {
-    let sessionId = '';
-    try {
-      sessionId = localStorage.getItem('saigon_guide_session') || '';
-      if (!sessionId) {
-        sessionId = `web-${Math.random().toString(36).slice(2, 10)}`;
-        localStorage.setItem('saigon_guide_session', sessionId);
-      }
-    } catch {
-      sessionId = `web-${Math.random().toString(36).slice(2, 10)}`;
-    }
-    const ping = () => {
-      fetch('/api/analytics/ping', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, platform: 'web', path: '/user' }),
-      }).catch(() => {});
-    };
-    ping();
-    const interval = setInterval(ping, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const {
     lang,

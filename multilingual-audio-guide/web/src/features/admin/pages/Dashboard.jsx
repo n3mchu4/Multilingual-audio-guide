@@ -10,14 +10,7 @@ function getInitialMobileAddress() {
 }
 
 export default function Dashboard() {
-<<<<<<< HEAD
-  const { places, stats, analytics, openModal } = useAdmin();
-  const navigate = useNavigate();
-  const requests = places.filter((p) => p.request);
-  const playsByLandmark = stats.playsByLandmark || {};
-  const recentPlays = analytics?.recentPlays || [];
-=======
-  const { places, stats, openModal, refresh } = useAdmin();
+  const { places, stats, analytics, openModal, refresh } = useAdmin();
   const navigate = useNavigate();
   const requests = places.filter((p) => p.request);
   const [mobileAddress, setMobileAddress] = useState(getInitialMobileAddress);
@@ -42,7 +35,8 @@ export default function Dashboard() {
     }, 30_000);
     return () => window.clearInterval(refreshTimer);
   }, [refresh]);
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
+  const playsByLandmark = stats.playsByLandmark || {};
+  const recentPlays = analytics?.recentPlays || [];
 
   return (
     <section className="page dashboard-page">
@@ -63,8 +57,8 @@ export default function Dashboard() {
             <div className="stat-icon" style={{ background: '#edf8f2', color: '#21835e' }}>👥</div>
             <span className="status live" style={{ animation: 'pulse 2s infinite' }}>● Trực tiếp</span>
           </div>
-          <strong>{stats.activeUsers}</strong>
-          <span className="label">Người đang dùng app (Online)</span>
+          <strong>{stats.activeUsers ?? '—'}</strong>
+          <span className="label">Thiết bị đang hoạt động (120 giây)</span>
         </div>
 
         <div className="stat" style={{ borderLeft: '4px solid #d63384' }}>
@@ -72,7 +66,7 @@ export default function Dashboard() {
             <div className="stat-icon">🎧</div>
             <span className="trend">Âm thanh</span>
           </div>
-          <strong>{stats.totalAudioPlays}</strong>
+          <strong>{stats.totalAudioPlays ?? '—'}</strong>
           <span className="label">Tổng lượt nghe thuyết minh</span>
         </div>
 
@@ -191,7 +185,7 @@ export default function Dashboard() {
               <h3>🎧 Lượt nghe thuyết minh theo địa danh</h3>
               <p>Số lần khách tham quan bấm nghe audio thuyết minh</p>
             </div>
-            <span className="status live">{stats.totalAudioPlays} lượt nghe</span>
+            <span className="status live">{stats.totalAudioPlays ?? '—'} lượt nghe</span>
           </div>
           <div className="panel-body">
             {places.length ? (
@@ -234,7 +228,7 @@ export default function Dashboard() {
               <p>Khách đang tương tác với ứng dụng</p>
             </div>
             <span className="status live" style={{ background: '#edf8f2', color: '#21835e' }}>
-              ● {stats.activeUsers} người online
+              ● {stats.activeUsers ?? '—'} người online
             </span>
           </div>
           <div className="panel-body">
