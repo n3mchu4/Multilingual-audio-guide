@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite web",
+    "dev": "vite web --host",
+    "dev:mobile": "npm --prefix mobile start",
     "build": "vite build web",
     "lint": "eslint .",
     "preview": "vite preview web",
-    "dev:api": "node db/node/demo-api.js",
+    "dev:api": "node --watch db/node/demo-api.js",
     "test": "node --test \"functions/src/**/*.test.js\""
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",
     "globals": "^17.12.0",
+    "qrcode-terminal": "^0.12.0",
     "vite": "^8.3.0"
   }
 }

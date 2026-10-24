@@ -3,24 +3,44 @@ import { useAdmin } from '../AdminContext';
 import { ADMIN_BASE } from '../navItems';
 
 export default function Dashboard() {
-  const { places, stats, openModal } = useAdmin();
+  const { places, stats, analytics, openModal } = useAdmin();
   const navigate = useNavigate();
   const requests = places.filter((p) => p.request);
+  const playsByLandmark = stats.playsByLandmark || {};
+  const recentPlays = analytics?.recentPlays || [];
 
   return (
     <section className="page">
       <div className="page-head">
         <div>
-          <p className="eyebrow">TỔNG QUAN HỆ THỐNG</p>
+          <p className="eyebrow">TỔNG QUAN HỆ THỐNG & THEO DÕI TRỰC TIẾP</p>
           <h1>Xin chào, Admin 👋</h1>
-          <p>Theo dõi tình trạng nội dung thuyết minh, tài khoản và các kết nối xe buýt.</p>
+          <p>Theo dõi số người đang dùng app, lượt nghe thuyết minh và nội dung di sản.</p>
         </div>
         <button className="btn" onClick={() => navigate(`${ADMIN_BASE}/activity`)}>
           ◷ Xem nhật ký hoạt động
         </button>
       </div>
 
-      <div className="stats">
+      <div className="stats" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        <div className="stat" style={{ borderLeft: '4px solid #21835e' }}>
+          <div className="stat-top">
+            <div className="stat-icon" style={{ background: '#edf8f2', color: '#21835e' }}>👥</div>
+            <span className="status live" style={{ animation: 'pulse 2s infinite' }}>● Trực tiếp</span>
+          </div>
+          <strong>{stats.activeUsers}</strong>
+          <span className="label">Người đang dùng app (Online)</span>
+        </div>
+
+        <div className="stat" style={{ borderLeft: '4px solid #d63384' }}>
+          <div className="stat-top">
+            <div className="stat-icon">🎧</div>
+            <span className="trend">Âm thanh</span>
+          </div>
+          <strong>{stats.totalAudioPlays}</strong>
+          <span className="label">Tổng lượt nghe thuyết minh</span>
+        </div>
+
         <div className="stat">
           <div className="stat-top">
             <div className="stat-icon">⌖</div>
@@ -29,22 +49,25 @@ export default function Dashboard() {
           <strong>{stats.places}</strong>
           <span className="label">Địa danh thuyết minh</span>
         </div>
+
         <div className="stat">
           <div className="stat-top">
             <div className="stat-icon">♙</div>
-            <span className="trend">Tài khoản hoạt động</span>
+            <span className="trend">Tài khoản</span>
           </div>
           <strong>{stats.activeAccounts}</strong>
-          <span className="label">Tài khoản đang quản lý</span>
+          <span className="label">Tài khoản quản lý</span>
         </div>
+
         <div className="stat">
           <div className="stat-top">
             <div className="stat-icon">↻</div>
             <span className="status pending">Cần xử lý</span>
           </div>
           <strong>{stats.pending}</strong>
-          <span className="label">Yêu cầu cập nhật từ Manager</span>
+          <span className="label">Yêu cầu từ Manager</span>
         </div>
+
         <div className="stat">
           <div className="stat-top">
             <div className="stat-icon">▤</div>
@@ -52,6 +75,83 @@ export default function Dashboard() {
           </div>
           <strong>{stats.buses}</strong>
           <span className="label">Kết nối tuyến xe buýt</span>
+        </div>
+      </div>
+
+      {/* Thống kê người dùng và lượt nghe thuyết minh */}
+      <div className="section-grid" style={{ marginBottom: 18 }}>
+        <div className="panel">
+          <div className="panel-head">
+            <div>
+              <h3>🎧 Lượt nghe thuyết minh theo địa danh</h3>
+              <p>Số lần khách tham quan bấm nghe audio thuyết minh</p>
+            </div>
+            <span className="status live">{stats.totalAudioPlays} lượt nghe</span>
+          </div>
+          <div className="panel-body">
+            {places.length ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {places.map((p) => {
+                  const count = playsByLandmark[p.id] || 0;
+                  const pct = stats.totalAudioPlays > 0 ? Math.round((count / stats.totalAudioPlays) * 100) : 0;
+                  return (
+                    <div key={p.id}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 12 }}>
+                        <b>{p.name}</b>
+                        <span><strong>{count}</strong> lượt ({pct}%)</span>
+                      </div>
+                      <div style={{ height: 7, background: '#fce7f3', borderRadius: 4, overflow: 'hidden' }}>
+                        <div
+                          style={{
+                            width: `${pct}%`,
+                            minWidth: count > 0 ? 8 : 0,
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #d63384, #ad1f63)',
+                            borderRadius: 4,
+                            transition: 'width 0.5s',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty">Chưa có dữ liệu địa danh.</div>
+            )}
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel-head">
+            <div>
+              <h3>📡 Hoạt động nghe gần nhất (Live Feed)</h3>
+              <p>Khách đang tương tác với ứng dụng</p>
+            </div>
+            <span className="status live" style={{ background: '#edf8f2', color: '#21835e' }}>
+              ● {stats.activeUsers} người online
+            </span>
+          </div>
+          <div className="panel-body">
+            {recentPlays.length ? (
+              <div className="activity">
+                {recentPlays.slice(0, 5).map((ev, i) => (
+                  <div className="activity-item" key={i}>
+                    <div className="activity-dot" style={{ background: '#fce7f3', color: '#d63384' }}>🎧</div>
+                    <div style={{ flex: 1 }}>
+                      <p><b>{ev.title}</b></p>
+                      <small>{new Date(ev.time).toLocaleTimeString('vi-VN')} · Thuyết minh {ev.lang ? ev.lang.toUpperCase() : 'VI'}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty" style={{ padding: '24px 0' }}>
+                <p>Chưa có lượt phát audio nào được ghi nhận gần đây.</p>
+                <small style={{ color: 'var(--muted)' }}>Khi khách mở app và bấm nghe audio, hoạt động sẽ xuất hiện tại đây theo thời gian thực.</small>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -119,24 +219,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginTop: 18 }}>
-        <div className="panel-head">
-          <div>
-            <h3>Quy trình duyệt nội dung</h3>
-            <p>Admin kiểm tra thay đổi trước khi nội dung mới được hiển thị cho người dùng</p>
-          </div>
-        </div>
-        <div className="panel-body" style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-          <span className="status pending">1. Manager gửi yêu cầu</span>
-          <span style={{ color: '#9fb0ad' }}>→</span>
-          <span className="status pending">2. Admin so sánh nội dung</span>
-          <span style={{ color: '#9fb0ad' }}>→</span>
-          <span className="status live">3. Chấp nhận / Từ chối</span>
-          <span style={{ color: '#9fb0ad' }}>→</span>
-          <span className="status live">4. Cập nhật hoặc giữ bản cũ</span>
         </div>
       </div>
     </section>

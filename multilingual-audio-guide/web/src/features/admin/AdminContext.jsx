@@ -14,6 +14,12 @@ export function AdminProvider({ children }) {
   const [places, setPlaces] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [analytics, setAnalytics] = useState({
+    activeUsers: 1,
+    totalAudioPlays: 0,
+    playsByLandmark: {},
+    recentPlays: [],
+  });
   const [modal, setModal] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
   const [loading, setLoading] = useState(true);
@@ -32,6 +38,7 @@ export function AdminProvider({ children }) {
       setPlaces(result.data.places);
       setAccounts(result.data.accounts);
       setActivities(result.data.activities);
+      if (result.data.analytics) setAnalytics(result.data.analytics);
       setLoadError('');
       return true;
     } catch (error) {
@@ -41,6 +48,21 @@ export function AdminProvider({ children }) {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch('/api/analytics/stats');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data) setAnalytics(json.data);
+        }
+      } catch {
+        // bỏ qua lỗi polling
+      }
+    }, 6000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -173,12 +195,16 @@ export function AdminProvider({ children }) {
     activeManagers: accounts.filter((account) => account.role === 'Manager' && account.active).length,
     pending: places.filter((place) => place.request).length,
     buses: places.reduce((sum, place) => sum + place.buses.length, 0),
+    activeUsers: analytics.activeUsers || 1,
+    totalAudioPlays: analytics.totalAudioPlays || 0,
+    playsByLandmark: analytics.playsByLandmark || {},
   };
 
   const value = {
     places,
     accounts,
     activities,
+    analytics,
     stats,
     modal,
     toastMsg,

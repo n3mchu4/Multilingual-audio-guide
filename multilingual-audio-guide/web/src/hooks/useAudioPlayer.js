@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
-export function useAudioPlayer(src) {
+export function useAudioPlayer(src, onPlay) {
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef(null);
+  const onPlayRef = useRef(onPlay);
+  onPlayRef.current = onPlay;
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -56,19 +58,31 @@ export function useAudioPlayer(src) {
     };
   }, [src]);
 
-  const toggle = () => {
+  const play = () => {
+    if (!audioRef.current) return Promise.resolve();
+    setError('');
+    return audioRef.current.play()
+      .then(() => {
+        setPlaying(true);
+        onPlayRef.current?.();
+      })
+      .catch(() => {
+        setPlaying(false);
+        setError('Không thể tải hoặc phát URL audio đã cấu hình.');
+      });
+  };
+
+  const pause = () => {
     if (!audioRef.current) return;
+    audioRef.current.pause();
+    setPlaying(false);
+  };
+
+  const toggle = () => {
     if (playing) {
-      audioRef.current.pause();
-      setPlaying(false);
+      pause();
     } else {
-      setError('');
-      audioRef.current.play()
-        .then(() => setPlaying(true))
-        .catch(() => {
-          setPlaying(false);
-          setError('Không thể tải hoặc phát URL audio đã cấu hình.');
-        });
+      play();
     }
   };
 
@@ -82,12 +96,15 @@ export function useAudioPlayer(src) {
     setError('');
   };
 
-  const seek = (time) => {
+  const seek = (time, autoPlay = true) => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = time;
     setElapsed(time);
     if (audioRef.current.duration > 0) {
       setProgress((time / audioRef.current.duration) * 100);
+    }
+    if (autoPlay && !playing) {
+      play();
     }
   };
 
@@ -97,6 +114,8 @@ export function useAudioPlayer(src) {
     duration,
     progress,
     error,
+    play,
+    pause,
     toggle,
     reset,
     seek,

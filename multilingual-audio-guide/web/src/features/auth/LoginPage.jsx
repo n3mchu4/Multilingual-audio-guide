@@ -62,7 +62,7 @@ export default function LoginPage() {
       }
 
       startSession(session);
-      navigate(userType === USER_TYPES.ADMIN ? '/admin' : '/', { replace: true });
+      navigate(userType === USER_TYPES.ADMIN ? '/admin' : '/home', { replace: true });
     } catch (error) {
       if (error instanceof ApiError) {
         if (

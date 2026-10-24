@@ -47,7 +47,9 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Trang dành cho khách: không yêu cầu đăng nhập */}
+        {/* Trang dành cho khách tham quan: không yêu cầu đăng nhập */}
+        <Route path="/" element={<UserWebPage />} />
+        <Route path="/user" element={<UserWebPage />} />
         <Route path="/places" element={<PlaceList />} />
         <Route path="/places/:id" element={<PlaceDetail />} />
 
@@ -63,7 +65,7 @@ export default function AppRouter() {
         />
 
         <Route
-          path="/"
+          path="/home"
           element={
             <RequireAuth>
               <ProtectedHome />
@@ -73,14 +75,8 @@ export default function AppRouter() {
 
         <Route
           path="*"
-          element={
-            <Navigate
-              to={isAuthenticated ? '/' : '/login'}
-              replace
-            />
-          }
+          element={<Navigate to="/" replace />}
         />
-        <Route path="/user" element={<UserWebPage />} />
       </Routes>
     </BrowserRouter>
   )

@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { pool, query } from './database.js';
+import { initAnalytics, getAnalyticsData } from './analytics-service.js';
 
 const formatDate = (value) =>
   new Date(value).toLocaleDateString('vi-VN', {
@@ -129,7 +130,10 @@ export async function getAdminBootstrap() {
     time: new Date(log.created_at).toLocaleString('vi-VN'),
   }));
 
-  return { places, accounts, activities };
+  await initAnalytics();
+  const analytics = getAnalyticsData();
+
+  return { places, accounts, activities, analytics };
 }
 
 export async function createManagerAccount({ username, password, landmarkId }) {

@@ -18,6 +18,7 @@ import {
   mapPoints,
   userGps,
   fetchPlacesFromAPI,
+  API_BASE_URL,
 } from "./services/mobileData";
 
 const C = {
@@ -246,6 +247,14 @@ export default function App() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/analytics/ping`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ platform: "mobile", path: "/mobile-app" }),
+    }).catch(() => {});
+  }, []);
+
   const place = placesList[currentPlace] || placesList[0] || {
     id: "",
     name: { vi: "", en: "" },
@@ -260,6 +269,28 @@ export default function App() {
   // Audio Player phát nguồn audio của địa danh đang phát
   const audioSource = playingPlace?.audioUrl?.[lang];
   const player = useAudioPlayer(audioSource);
+
+  const transcriptText = place.history?.[lang] || "";
+  const sentencesList = useMemo(() => {
+    if (!transcriptText) return [];
+    const raw = transcriptText.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter(Boolean);
+    const totalChars = raw.reduce((sum, s) => sum + s.length, 0) || 1;
+    const dur = (player.duration && playingPlaceIndex === currentPlace) ? player.duration : 120;
+    let curr = 0;
+    return raw.map((sentence, idx) => {
+      const slice = (sentence.length / totalChars) * dur;
+      const start = curr;
+      const end = start + slice;
+      curr = end;
+      return { id: idx, text: sentence, start, end };
+    });
+  }, [transcriptText, player.duration, playingPlaceIndex, currentPlace]);
+
+  const activeSentenceIdx = useMemo(() => {
+    if (playingPlaceIndex !== currentPlace || !player.playing || sentencesList.length === 0) return -1;
+    const found = sentencesList.findIndex((s) => player.currentTime >= s.start && player.currentTime < s.end);
+    return found !== -1 ? found : sentencesList.length - 1;
+  }, [playingPlaceIndex, currentPlace, player.playing, player.currentTime, sentencesList]);
 
   if (placesLoading || placesError || placesList.length === 0) {
     return (
@@ -319,11 +350,21 @@ export default function App() {
       setPlayingPlaceIndex(targetIndex);
       player.replace(src);
       player.play();
+      fetch(`${API_BASE_URL}/api/analytics/play`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ landmarkId: targetPlace.id, lang, title: targetPlace.name[lang] }),
+      }).catch(() => {});
     } else {
       if (player.playing) {
         player.pause();
       } else {
         player.play();
+        fetch(`${API_BASE_URL}/api/analytics/play`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ landmarkId: targetPlace.id, lang, title: targetPlace.name[lang] }),
+        }).catch(() => {});
       }
     }
   };
@@ -603,10 +644,46 @@ export default function App() {
         </View>
       </View>
       <View style={styles.section}>
-        <Text style={styles.cardTitle}>{tr("transcriptTitle")}</Text>
-        <Text style={[styles.paragraph, { marginTop: 12 }]}>
-          {place.history[lang]}
-        </Text>
+        <View style={styles.rowBetween}>
+          <Text style={styles.cardTitle}>{tr("transcriptTitle")}</Text>
+          <Text style={{ fontSize: 11, color: C.pink, fontWeight: "700" }}>
+            {activeSentenceIdx >= 0
+              ? `${lang === "vi" ? "Đang đọc câu" : "Sentence"} ${activeSentenceIdx + 1}/${sentencesList.length}`
+              : (lang === "vi" ? "Chạm câu để nghe" : "Tap sentence to play")}
+          </Text>
+        </View>
+        <View style={{ marginTop: 12, gap: 8 }}>
+          {sentencesList.map((item, idx) => {
+            const isActive = idx === activeSentenceIdx;
+            return (
+              <Pressable
+                key={idx}
+                onPress={() => {
+                  if (playingPlaceIndex !== currentPlace) {
+                    toggleAudio(currentPlace);
+                  }
+                  if (player?.seekTo) {
+                    player.seekTo(item.start);
+                  }
+                  if (!player.playing) {
+                    player.play();
+                  }
+                }}
+                style={{
+                  padding: 10,
+                  borderRadius: 10,
+                  backgroundColor: isActive ? "#fce7f3" : "#f7f8f6",
+                  borderLeftWidth: 3,
+                  borderLeftColor: isActive ? C.pink : "transparent",
+                }}
+              >
+                <Text style={{ fontSize: 13, lineHeight: 20, color: isActive ? C.ink : "#555", fontWeight: isActive ? "700" : "400" }}>
+                  {item.text}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
       {place.gallery && place.gallery.length > 0 && (
         <View style={styles.section}>

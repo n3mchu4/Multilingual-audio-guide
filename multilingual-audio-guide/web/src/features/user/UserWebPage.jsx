@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useGuideState } from "../../hooks/useGuideState";
 import {
   SpotList,
@@ -52,6 +53,29 @@ export default function UserWebPage() {
     }
     void loadPlaces();
     return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    let sessionId = '';
+    try {
+      sessionId = localStorage.getItem('saigon_guide_session') || '';
+      if (!sessionId) {
+        sessionId = `web-${Math.random().toString(36).slice(2, 10)}`;
+        localStorage.setItem('saigon_guide_session', sessionId);
+      }
+    } catch {
+      sessionId = `web-${Math.random().toString(36).slice(2, 10)}`;
+    }
+    const ping = () => {
+      fetch('/api/analytics/ping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, platform: 'web', path: '/user' }),
+      }).catch(() => {});
+    };
+    ping();
+    const interval = setInterval(ping, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const {
@@ -209,7 +233,14 @@ export default function UserWebPage() {
             >
               {lang === "vi" ? "◉ VI" : "◉ EN"}
             </button>
-            <div className="mini-avatar">{"SG"}</div>
+            <Link
+              to="/login"
+              className="mini-avatar"
+              title="Đăng nhập Quản trị viên (Admin)"
+              style={{ textDecoration: "none", cursor: "pointer" }}
+            >
+              {"⚙"}
+            </Link>
           </div>
         </header>
         <main id="sg-web-homePage" className={page === "home" ? "" : "hidden"}>
@@ -370,6 +401,17 @@ export default function UserWebPage() {
                   "Nội dung địa danh được tải từ PostgreSQL; ảnh và audio được phát từ các URL Storage đã lưu trong cơ sở dữ liệu. Bản đồ và lộ trình hiện vẫn là minh họa.",
                 )}
               </p>
+            </div>
+            <div className="settings-card" style={{ borderLeft: "4px solid var(--accent)" }}>
+              <h2>Quản trị hệ thống</h2>
+              <p>Dành riêng cho Quản trị viên (Admin) và Ban quản lý địa danh (Manager) để theo dõi số người dùng, lượt nghe và duyệt nội dung thuyết minh.</p>
+              <Link
+                to="/login"
+                className="outline-btn"
+                style={{ textDecoration: "none", display: "inline-block", marginTop: 8 }}
+              >
+                Đăng nhập Quản trị viên →
+              </Link>
             </div>
           </div>
         </main>

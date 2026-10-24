@@ -13,7 +13,20 @@ export function useGuideState(words, places) {
   // Nếu chưa có file của ngôn ngữ đang chọn thì dùng tạm bản tiếng Việt.
   const audioFile = places[currentPlace]?.audioFile;
   const audioSrc = audioFile?.[lang] ?? audioFile?.vi ?? "";
-  const audio = useAudioPlayer(audioSrc);
+  const audio = useAudioPlayer(audioSrc, () => {
+    const landmark = places[currentPlace];
+    if (landmark?.id) {
+      fetch('/api/analytics/play', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          landmarkId: landmark.id,
+          lang,
+          title: landmark.name?.[lang] || landmark.name?.vi || landmark.id,
+        }),
+      }).catch(() => {});
+    }
+  });
   const tr = (key, fallback = key) =>
     words[lang]?.[key] ?? words.vi?.[key] ?? fallback;
   const showPage = (next) => {

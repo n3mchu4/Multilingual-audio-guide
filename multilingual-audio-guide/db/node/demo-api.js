@@ -20,6 +20,7 @@ import {
 import { createTokenService } from '../../functions/src/services/tokenService.js';
 import { AUTH_ERROR_CODES } from '../../shared/constants/auth.js';
 import { getFeaturesForUserType, USER_TYPES } from '../../shared/constants/roles.js';
+import { recordPing, recordAudioPlay, getAnalyticsData } from './analytics-service.js';
 const port=Number(process.env.DB_API_PORT ?? 3002);
 if (!Number.isInteger(port) || port<1 || port>65535) throw new Error('Invalid DB_API_PORT');
 const allowedOrigin=process.env.DB_API_CORS_ORIGIN ?? 'http://localhost:5173';
@@ -88,11 +89,17 @@ async function serveMedia(req,res,pathname) {
   stream.on('error',()=>res.destroy());res.on('close',()=>stream.destroy());stream.pipe(res);
 }
 const server=http.createServer(async (req,res)=>{
-  if (req.headers.origin===allowedOrigin) {
-    res.setHeader('Access-Control-Allow-Origin',allowedOrigin);res.setHeader('Vary','Origin');
-    res.setHeader('Access-Control-Allow-Methods','GET, HEAD, POST, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers','Range, Content-Type, Authorization');
-    res.setHeader('Access-Control-Expose-Headers','Content-Length, Content-Range, Accept-Ranges');
+  const origin = req.headers.origin;
+  const isAllowed = origin && (
+    origin === allowedOrigin ||
+    /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin)
+  );
+  if (isAllowed) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, POST, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type, Authorization');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
   }
   if (req.method==='OPTIONS') {res.writeHead(204);res.end();return;}
   if (!['GET','HEAD','POST','PATCH','DELETE'].includes(req.method)) {
@@ -102,6 +109,26 @@ const server=http.createServer(async (req,res)=>{
     const url=new URL(req.url,'http://localhost');
     if (url.pathname.startsWith('/media/')) {await serveMedia(req,res,url.pathname);return;}
     if (req.method==='HEAD') {res.writeHead(405);res.end();return;}
+    if (url.pathname==='/api/analytics/ping') {
+      const body = req.method==='POST' ? await readJson(req).catch(()=>({})) : {};
+      const activeUsers = recordPing(body?.sessionId, body?.platform ?? 'web', body?.path ?? '/');
+      sendJson(res, 200, { ok: true, activeUsers });
+      return;
+    }
+    if (req.method==='POST' && url.pathname==='/api/analytics/play') {
+      const body = await readJson(req).catch(()=>({}));
+      const result = await recordAudioPlay({
+        landmarkId: String(body?.landmarkId ?? ''),
+        lang: String(body?.lang ?? 'vi'),
+        title: String(body?.title ?? ''),
+      });
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    }
+    if (req.method==='GET' && url.pathname==='/api/analytics/stats') {
+      sendJson(res, 200, { ok: true, data: getAnalyticsData() });
+      return;
+    }
     if (req.method==='POST' && url.pathname==='/api/auth/login') {
       const body=await readJson(req);
       const username=String(body?.unfid ?? '').trim().toLowerCase();
