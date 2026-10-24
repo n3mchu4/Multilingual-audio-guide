@@ -10,30 +10,13 @@ export function useGuideState(words, places, onPlaybackStarted) {
   const [currentPlace, setCurrentPlace] = useState(0);
   const scrollRef = useRef(null);
    // audioFile là object { vi: "https://...supabase.co/.../vi.mp3", en: "..." }
-  // Nếu chưa có file của ngôn ngữ đang chọn thì dùng tạm bản tiếng Việt.
+  // Chỉ phát audio của đúng ngôn ngữ đang chọn.
   const audioFile = places[currentPlace]?.audioFile;
-  const audioSrc = audioFile?.[lang] ?? audioFile?.vi ?? "";
-<<<<<<< HEAD
-  const audio = useAudioPlayer(audioSrc, () => {
-    const landmark = places[currentPlace];
-    if (landmark?.id) {
-      fetch('/api/analytics/play', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          landmarkId: landmark.id,
-          lang,
-          title: landmark.name?.[lang] || landmark.name?.vi || landmark.id,
-        }),
-      }).catch(() => {});
-    }
-  });
-=======
+  const audioSrc = audioFile?.[lang] || "";
   const audio = useAudioPlayer(audioSrc, () => onPlaybackStarted?.({
     landmarkId: places[currentPlace]?.id,
     language: lang,
   }));
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
   const tr = (key, fallback = key) =>
     words[lang]?.[key] ?? words.vi?.[key] ?? fallback;
   const showPage = (next) => {

@@ -62,14 +62,10 @@ export default function LoginPage() {
       }
 
       startSession(session);
-<<<<<<< HEAD
-      navigate(userType === USER_TYPES.ADMIN ? '/admin' : '/home', { replace: true });
-=======
       navigate(
         userType === USER_TYPES.ADMIN ? '/admin' : '/manager',
         { replace: true },
       );
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
     } catch (error) {
       if (error instanceof ApiError) {
         if (
@@ -189,7 +185,7 @@ export default function LoginPage() {
             <div className="demo-title">TẠO TÀI KHOẢN QUẢN TRỊ</div>
             <p>
               Đăng nhập quản trị dùng tài khoản trong PostgreSQL. Nếu chưa có tài khoản,
-              tạo super-admin theo hướng dẫn “First administrator” trong <code>docs/storage-media.md</code>.
+              tạo super-admin theo hướng dẫn trong <code>docs/admin-and-transcript-fixes.md</code>.
               Tên đăng nhập mặc định là <code>admin</code>; bạn tự đặt mật khẩu khi tạo.
             </p>
           </div>
