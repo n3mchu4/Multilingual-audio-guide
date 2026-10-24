@@ -281,7 +281,7 @@ const server=http.createServer(async (req,res)=>{
     sendJson(res,404,{error:'Not found'});
   } catch(error) {
     const status=error.status ?? (error.code==='23505' ? 409 : 500);
-    console.error('API error:',error.code ?? error.name);
+    console.error('API error:', error.code ?? error.name, error.message);
     sendJson(res,status,{error:status===500?'Database request failed':error.message});
   }
 });
