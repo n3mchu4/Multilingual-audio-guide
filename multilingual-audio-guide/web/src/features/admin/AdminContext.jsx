@@ -14,12 +14,16 @@ export function AdminProvider({ children }) {
   const [places, setPlaces] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [activities, setActivities] = useState([]);
+<<<<<<< HEAD
   const [analytics, setAnalytics] = useState({
     activeUsers: 1,
     totalAudioPlays: 0,
     playsByLandmark: {},
     recentPlays: [],
   });
+=======
+  const [analytics, setAnalytics] = useState(null);
+>>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
   const [modal, setModal] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
   const [loading, setLoading] = useState(true);
@@ -38,7 +42,17 @@ export function AdminProvider({ children }) {
       setPlaces(result.data.places);
       setAccounts(result.data.accounts);
       setActivities(result.data.activities);
+<<<<<<< HEAD
       if (result.data.analytics) setAnalytics(result.data.analytics);
+=======
+      setAnalytics(
+        result.data.analytics
+        && Number.isFinite(Number(result.data.analytics.visitors))
+        && Number.isFinite(Number(result.data.analytics.listens))
+          ? result.data.analytics
+          : null,
+      );
+>>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
       setLoadError('');
       return true;
     } catch (error) {
@@ -193,6 +207,8 @@ export function AdminProvider({ children }) {
     places: places.length,
     activeAccounts: accounts.filter((account) => account.active).length,
     activeManagers: accounts.filter((account) => account.role === 'Manager' && account.active).length,
+    visitors: analytics ? Number(analytics.visitors) : null,
+    listens: analytics ? Number(analytics.listens) : null,
     pending: places.filter((place) => place.request).length,
     buses: places.reduce((sum, place) => sum + place.buses.length, 0),
     activeUsers: analytics.activeUsers || 1,

@@ -9,12 +9,18 @@
     "build": "vite build web",
     "lint": "eslint .",
     "preview": "vite preview web",
+<<<<<<< HEAD
     "dev:api": "node --watch db/node/demo-api.js",
     "test": "node --test \"functions/src/**/*.test.js\""
+=======
+    "dev:api": "node db/node/demo-api.js",
+    "test": "node --test \"functions/src/**/*.test.js\" \"db/node/*.test.js\""
+>>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
   },
   "dependencies": {
     "i18next": "^26.4.2",
     "pg": "^8.23.1",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-i18next": "^17.0.15",

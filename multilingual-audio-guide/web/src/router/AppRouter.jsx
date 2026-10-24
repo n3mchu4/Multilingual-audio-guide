@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 import { USER_TYPES } from '@shared/constants/roles.js'
 import AdminRoutes from '../features/admin/AdminRoutes'
+import ManagerRoutes from '../features/manager/ManagerRoutes'
 import LoginPage from '../features/auth/LoginPage'
 import RequireAuth from '../features/auth/RequireAuth'
 import Home from '../pages/Home'
@@ -65,7 +66,20 @@ export default function AppRouter() {
         />
 
         <Route
+<<<<<<< HEAD
           path="/home"
+=======
+          path="/manager/*"
+          element={
+            <RequireAuth userType={USER_TYPES.MANAGER}>
+              <ManagerRoutes />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/"
+>>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
           element={
             <RequireAuth>
               <ProtectedHome />

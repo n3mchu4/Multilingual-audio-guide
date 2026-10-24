@@ -69,3 +69,19 @@
 
 
 .admin-root .nav a{text-decoration:none}
+.admin-root .dashboard-page .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.admin-root .analytics-setup-note{margin:-8px 0 18px;padding:11px 14px;border:1px solid #f4e6c6;border-radius:10px;background:#fff9ec;color:#7b6840;font-size:11px;line-height:1.6}
+.admin-root .analytics-setup-note code{font-weight:800}
+.admin-root .mobile-share{margin-bottom:18px}
+.admin-root .mobile-share-body{display:grid;grid-template-columns:220px minmax(0,1fr);align-items:center;gap:24px}
+.admin-root .mobile-share-qr{width:220px;min-height:220px;display:grid;place-items:center;padding:10px;background:#fff;border:1px solid var(--line);border-radius:14px}
+.admin-root .mobile-share-qr svg{display:block;max-width:100%;height:auto}
+.admin-root .mobile-share-placeholder{color:var(--muted);font-size:11px;line-height:1.6;text-align:center}
+.admin-root .mobile-share-info{max-width:520px}
+.admin-root .mobile-share-info label{display:block;margin-bottom:8px;font-size:11px;font-weight:800}
+.admin-root .mobile-share-info .search{width:100%;max-width:420px}
+.admin-root .mobile-share-info p{color:var(--muted);font-size:11px;line-height:1.6}
+.admin-root .mobile-share-link{text-decoration:none}
+@media(max-width:600px){.admin-root .mobile-share-body{grid-template-columns:1fr}.admin-root .mobile-share-qr{justify-self:center}}
+@media(max-width:900px){.admin-root .dashboard-page .stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.admin-root .dashboard-page .stats{grid-template-columns:1fr}}

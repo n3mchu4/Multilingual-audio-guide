@@ -21,6 +21,10 @@ export const fetchPlacesFromAPI = async () => {
       vi: item.description_vi || "",
       en: item.description_en || "",
     },
+    transcriptCues: {
+      vi: item.transcript_cues_vi || [],
+      en: item.transcript_cues_en || [],
+    },
     history: {
       vi: item.transcript_vi || item.description_vi || "",
       en: item.transcript_en || item.description_en || "",

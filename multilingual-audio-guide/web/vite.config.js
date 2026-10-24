@@ -54,8 +54,13 @@ export default defineConfig({
     alias: { '@shared': fileURLToPath(new URL('../shared', import.meta.url)) },
   },
   server: {
+<<<<<<< HEAD
     host: true, // Lắng nghe trên mọi IP mạng nội bộ (0.0.0.0)
     fs: { allow: ['..'] }, // Cho phép import thư mục shared/ nằm ngoài web/
+=======
+    host: true,
+    fs: { allow: ['..'] }, // cho phép import thư mục shared/ nằm ngoài web/
+>>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
     proxy: {
       '/api': 'http://127.0.0.1:3002',
       '/media': 'http://127.0.0.1:3002',

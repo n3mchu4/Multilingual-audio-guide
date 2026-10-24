@@ -49,3 +49,7 @@ export function login({ unfid, password }) {
 export function adminRequest(path, options = {}) {
   return request(path, options, true)
 }
+
+export function managerRequest(path, options = {}) {
+  return request(path, options, true)
+}

@@ -1,6 +1,7 @@
 ﻿
 .login-root{--pink:#d63384;--pink-dark:#ad1f63;--pink-light:#fce7f3;--ink:#203333;--muted:#6e8180;--line:#f1dfe7;--bg:#fff5f9;--white:#fff;--gold:#f4a6c8}
 .login-root *{box-sizing:border-box}
+
 .login-root{margin:0;min-height:100vh;font-family:Inter,"Segoe UI",Arial,sans-serif;background:linear-gradient(135deg,#fff5f9 0%,#fff0f6 55%,#fde7f0 100%);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:28px}
 .login-root .shell{width:min(100%,1000px);min-height:610px;background:var(--white);border:1px solid rgba(214,51,132,.1);border-radius:28px;overflow:hidden;display:grid;grid-template-columns: .95fr 1.05fr;box-shadow:0 24px 70px rgba(94,24,55,.12)}
 .login-root .brand-panel{position:relative;overflow:hidden;background:linear-gradient(145deg,#d63384,#ad1f63);color:#fff;padding:46px 42px;display:flex;flex-direction:column;justify-content:space-between}

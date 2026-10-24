@@ -11,7 +11,7 @@ try {
     (username,password_hash,role,is_active,is_super_admin)
     VALUES ($1,$2,'ADMIN',true,true) RETURNING user_id,username,role`, [username,hash]);
   console.table(rows);
-  console.log('Password hashed. This creates the account; implement your login API separately.');
+  console.log('Administrator account created. Sign in with the username and password you supplied.');
 } catch (error) {
   console.error('Create admin failed:', error.code ?? error.message);
   process.exitCode = 1;

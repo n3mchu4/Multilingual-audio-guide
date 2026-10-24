@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
+<<<<<<< HEAD
 export function useAudioPlayer(src, onPlay) {
+=======
+export function useAudioPlayer(src, onPlaybackStarted) {
+>>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -82,7 +86,20 @@ export function useAudioPlayer(src, onPlay) {
     if (playing) {
       pause();
     } else {
+<<<<<<< HEAD
       play();
+=======
+      setError('');
+      audioRef.current.play()
+        .then(() => {
+          setPlaying(true);
+          onPlaybackStarted?.();
+        })
+        .catch(() => {
+          setPlaying(false);
+          setError('Không thể tải hoặc phát URL audio đã cấu hình.');
+        });
+>>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
     }
   };
 

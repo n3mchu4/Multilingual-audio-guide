@@ -38,6 +38,19 @@ CREATE TABLE IF NOT EXISTS public.users (
   CHECK (NOT is_super_admin OR (role = 'ADMIN' AND is_active))
 );
 CREATE INDEX IF NOT EXISTS users_landmark_idx ON public.users(landmark_id);
+CREATE TABLE IF NOT EXISTS public.analytics_visitors (
+  visitor_id uuid PRIMARY KEY,
+  first_seen_at timestamptz NOT NULL DEFAULT now(),
+  last_seen_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS public.audio_listens (
+  listen_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  visitor_id uuid NOT NULL REFERENCES public.analytics_visitors(visitor_id) ON DELETE CASCADE,
+  landmark_id text NOT NULL REFERENCES public.landmarks(landmark_id) ON DELETE CASCADE,
+  language text NOT NULL CHECK (language IN ('vi', 'en')),
+  listened_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS audio_listens_time_idx ON public.audio_listens(listened_at DESC);
 CREATE TABLE IF NOT EXISTS public.landmark_images (
   image_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   landmark_id text NOT NULL REFERENCES public.landmarks(landmark_id) ON DELETE CASCADE,
@@ -183,4 +196,27 @@ END $$;
 DROP TRIGGER IF EXISTS proposals_refresh_pending ON public.proposals;
 CREATE TRIGGER proposals_refresh_pending AFTER INSERT OR UPDATE OR DELETE ON public.proposals
   FOR EACH ROW EXECUTE FUNCTION public.refresh_pending_flag();
+ALTER TABLE public.landmarks
+  ADD COLUMN IF NOT EXISTS transcript_cues_vi jsonb NOT NULL DEFAULT '[]'::jsonb
+    CHECK (jsonb_typeof(transcript_cues_vi) = 'array'),
+  ADD COLUMN IF NOT EXISTS transcript_cues_en jsonb NOT NULL DEFAULT '[]'::jsonb
+    CHECK (jsonb_typeof(transcript_cues_en) = 'array');
+
+-- Timings belong to a specific transcript AND audio asset.
+CREATE OR REPLACE FUNCTION public.invalidate_transcript_cues()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.transcript_vi IS DISTINCT FROM OLD.transcript_vi
+     OR NEW.audio_vi_url IS DISTINCT FROM OLD.audio_vi_url THEN
+    NEW.transcript_cues_vi = '[]'::jsonb;
+  END IF;
+  IF NEW.transcript_en IS DISTINCT FROM OLD.transcript_en
+     OR NEW.audio_en_url IS DISTINCT FROM OLD.audio_en_url THEN
+    NEW.transcript_cues_en = '[]'::jsonb;
+  END IF;
+  RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS landmarks_invalidate_cues ON public.landmarks;
+CREATE TRIGGER landmarks_invalidate_cues BEFORE UPDATE ON public.landmarks
+  FOR EACH ROW EXECUTE FUNCTION public.invalidate_transcript_cues();
 COMMIT;

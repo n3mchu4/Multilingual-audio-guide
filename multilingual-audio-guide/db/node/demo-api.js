@@ -17,6 +17,10 @@ import {
   updateLandmark,
   updateManagerAccount,
 } from './admin-repository.js';
+import {
+  getManagerWorkspace,
+  submitManagerProposal,
+} from './manager-repository.js';
 import { createTokenService } from '../../functions/src/services/tokenService.js';
 import { AUTH_ERROR_CODES } from '../../shared/constants/auth.js';
 import { getFeaturesForUserType, USER_TYPES } from '../../shared/constants/roles.js';
@@ -54,6 +58,16 @@ async function authenticatedAdmin(req) {
     FROM public.users WHERE user_id=$1`,[payload.sub]);
   const user=rows[0];
   return user?.role==='ADMIN' && user.is_active ? user : null;
+}
+async function authenticatedManager(req) {
+  const authorization=req.headers.authorization;
+  const token=authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
+  let payload;
+  try { payload=tokens.verify(token); } catch { return null; }
+  if (!payload?.sub || !uuidPattern.test(payload.sub)) return null;
+  const { rows }=await query(`SELECT user_id,username,landmark_id
+    FROM public.users WHERE user_id=$1 AND role='MANAGER' AND is_active`,[payload.sub]);
+  return rows[0] ?? null;
 }
 async function serveMedia(req,res,pathname) {
   if ((process.env.STORAGE_MODE ?? 'local') !== 'local') { res.writeHead(404); res.end(); return; }
@@ -109,6 +123,7 @@ const server=http.createServer(async (req,res)=>{
     const url=new URL(req.url,'http://localhost');
     if (url.pathname.startsWith('/media/')) {await serveMedia(req,res,url.pathname);return;}
     if (req.method==='HEAD') {res.writeHead(405);res.end();return;}
+<<<<<<< HEAD
     if (url.pathname==='/api/analytics/ping') {
       const body = req.method==='POST' ? await readJson(req).catch(()=>({})) : {};
       const activeUsers = recordPing(body?.sessionId, body?.platform ?? 'web', body?.path ?? '/');
@@ -128,6 +143,39 @@ const server=http.createServer(async (req,res)=>{
     if (req.method==='GET' && url.pathname==='/api/analytics/stats') {
       sendJson(res, 200, { ok: true, data: getAnalyticsData() });
       return;
+=======
+    if (req.method==='POST' && url.pathname==='/api/analytics/visitors') {
+      const body=await readJson(req);
+      const visitorId=String(body?.visitorId ?? '');
+      if (!uuidPattern.test(visitorId)) {sendJson(res,400,{error:'A valid visitorId is required'});return;}
+      await query(`INSERT INTO public.analytics_visitors(visitor_id)
+        VALUES ($1)
+        ON CONFLICT (visitor_id) DO UPDATE SET last_seen_at=now()`,[visitorId]);
+      sendJson(res,201,{ok:true});return;
+    }
+    if (req.method==='POST' && url.pathname==='/api/analytics/listens') {
+      const body=await readJson(req);
+      const visitorId=String(body?.visitorId ?? '');
+      const landmarkId=String(body?.landmarkId ?? '');
+      const language=String(body?.language ?? '');
+      if (!uuidPattern.test(visitorId) || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(landmarkId)
+          || !['vi','en'].includes(language)) {
+        sendJson(res,400,{error:'A valid visitorId, landmarkId and language are required'});return;
+      }
+      const {rowCount}=await query(`WITH selected_landmark AS (
+          SELECT landmark_id FROM public.landmarks WHERE landmark_id=$2
+        ), visitor AS (
+          INSERT INTO public.analytics_visitors(visitor_id)
+          SELECT $1 WHERE EXISTS (SELECT 1 FROM selected_landmark)
+          ON CONFLICT (visitor_id) DO UPDATE SET last_seen_at=now()
+          RETURNING visitor_id
+        )
+        INSERT INTO public.audio_listens(visitor_id,landmark_id,language)
+        SELECT visitor.visitor_id,selected_landmark.landmark_id,$3
+        FROM visitor CROSS JOIN selected_landmark`,[visitorId,landmarkId,language]);
+      if (!rowCount) {sendJson(res,404,{error:'Landmark not found'});return;}
+      sendJson(res,201,{ok:true});return;
+>>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
     }
     if (req.method==='POST' && url.pathname==='/api/auth/login') {
       const body=await readJson(req);
@@ -155,6 +203,18 @@ const server=http.createServer(async (req,res)=>{
         features:getFeaturesForUserType(userType),
       });
       return;
+    }
+    if (url.pathname.startsWith('/api/manager/')) {
+      const manager=await authenticatedManager(req);
+      if (!manager) {sendJson(res,401,{error:'Manager authentication required'});return;}
+      if (req.method==='GET' && url.pathname==='/api/manager/workspace') {
+        sendJson(res,200,{data:await getManagerWorkspace(manager.user_id)});return;
+      }
+      if (req.method==='POST' && url.pathname==='/api/manager/proposals') {
+        const proposal=await submitManagerProposal(manager.user_id,await readJson(req));
+        sendJson(res,201,{data:proposal});return;
+      }
+      sendJson(res,404,{error:'Not found'});return;
     }
     if (url.pathname.startsWith('/api/admin/')) {
       const admin=await authenticatedAdmin(req);

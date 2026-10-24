@@ -28,7 +28,7 @@ function mapVersion(row, prefix = '') {
 }
 
 export async function getAdminBootstrap() {
-  const [landmarksResult, imagesResult, busesResult, proposalsResult, proposalImagesResult, usersResult, logsResult] =
+  const [landmarksResult, imagesResult, busesResult, proposalsResult, proposalImagesResult, usersResult, logsResult, analyticsResult] =
     await Promise.all([
       query('SELECT * FROM public.landmarks ORDER BY landmark_id'),
       query('SELECT landmark_id, image_url FROM public.landmark_images ORDER BY sort_order, image_id'),
@@ -52,6 +52,9 @@ export async function getAdminBootstrap() {
         ORDER BY u.created_at, u.username`),
       query(`SELECT action_type, description, created_at
         FROM public.activity_logs ORDER BY created_at DESC LIMIT 100`),
+      query(`SELECT
+        (SELECT COUNT(*)::int FROM public.analytics_visitors) AS visitors,
+        (SELECT COUNT(*)::int FROM public.audio_listens) AS listens`),
     ]);
 
   const imagesByLandmark = new Map();
@@ -130,10 +133,22 @@ export async function getAdminBootstrap() {
     time: new Date(log.created_at).toLocaleString('vi-VN'),
   }));
 
+<<<<<<< HEAD
   await initAnalytics();
   const analytics = getAnalyticsData();
 
   return { places, accounts, activities, analytics };
+=======
+  return {
+    places,
+    accounts,
+    activities,
+    analytics: {
+      visitors: analyticsResult.rows[0].visitors,
+      listens: analyticsResult.rows[0].listens,
+    },
+  };
+>>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
 }
 
 export async function createManagerAccount({ username, password, landmarkId }) {
@@ -155,15 +170,25 @@ export async function createManagerAccount({ username, password, landmarkId }) {
   [null, rows[0].user_id, `Tạo tài khoản Manager “${normalizedUsername}”.`]);
 }
 
-export async function updateManagerAccount(id, { username, landmarkId }) {
+export async function updateManagerAccount(id, { username, landmarkId, password }) {
   const normalizedUsername = String(username ?? '').trim().toLowerCase();
+  const normalizedPassword = password == null ? '' : String(password);
   if (!/^[a-z0-9._-]{3,80}$/.test(normalizedUsername)) {
     throw new Error('Tên đăng nhập không hợp lệ.');
   }
+  if (normalizedPassword && (
+    normalizedPassword.length < 10
+    || Buffer.byteLength(normalizedPassword, 'utf8') > 72
+  )) {
+    throw new Error('Mật khẩu mới phải có ít nhất 10 ký tự và tối đa 72 byte UTF-8.');
+  }
+  const passwordHash = normalizedPassword
+    ? await bcrypt.hash(normalizedPassword, 12)
+    : null;
   const { rowCount } = await query(`UPDATE public.users
-    SET username = $1, landmark_id = $2
-    WHERE user_id = $3 AND role = 'MANAGER'`,
-  [normalizedUsername, landmarkId, id]);
+    SET username = $1, landmark_id = $2, password_hash = COALESCE($3, password_hash)
+    WHERE user_id = $4 AND role = 'MANAGER'`,
+  [normalizedUsername, landmarkId, passwordHash, id]);
   if (!rowCount) throw new Error('Không tìm thấy tài khoản Manager.');
 }
 
