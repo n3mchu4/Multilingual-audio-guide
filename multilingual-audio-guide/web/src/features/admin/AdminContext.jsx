@@ -14,16 +14,7 @@ export function AdminProvider({ children }) {
   const [places, setPlaces] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [activities, setActivities] = useState([]);
-<<<<<<< HEAD
-  const [analytics, setAnalytics] = useState({
-    activeUsers: 1,
-    totalAudioPlays: 0,
-    playsByLandmark: {},
-    recentPlays: [],
-  });
-=======
   const [analytics, setAnalytics] = useState(null);
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
   const [modal, setModal] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
   const [loading, setLoading] = useState(true);
@@ -42,9 +33,6 @@ export function AdminProvider({ children }) {
       setPlaces(result.data.places);
       setAccounts(result.data.accounts);
       setActivities(result.data.activities);
-<<<<<<< HEAD
-      if (result.data.analytics) setAnalytics(result.data.analytics);
-=======
       setAnalytics(
         result.data.analytics
         && Number.isFinite(Number(result.data.analytics.visitors))
@@ -52,7 +40,6 @@ export function AdminProvider({ children }) {
           ? result.data.analytics
           : null,
       );
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
       setLoadError('');
       return true;
     } catch (error) {
@@ -67,13 +54,10 @@ export function AdminProvider({ children }) {
   useEffect(() => {
     const timer = setInterval(async () => {
       try {
-        const res = await fetch('/api/analytics/stats');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data) setAnalytics(json.data);
-        }
+        const json = await adminRequest('/api/analytics/stats');
+        if (json.data) setAnalytics(json.data);
       } catch {
-        // bỏ qua lỗi polling
+        setAnalytics(previous => previous ? { ...previous, activeUsers: null } : null);
       }
     }, 6000);
     return () => clearInterval(timer);
@@ -211,9 +195,9 @@ export function AdminProvider({ children }) {
     listens: analytics ? Number(analytics.listens) : null,
     pending: places.filter((place) => place.request).length,
     buses: places.reduce((sum, place) => sum + place.buses.length, 0),
-    activeUsers: analytics.activeUsers || 1,
-    totalAudioPlays: analytics.totalAudioPlays || 0,
-    playsByLandmark: analytics.playsByLandmark || {},
+    activeUsers: analytics?.activeUsers ?? null,
+    totalAudioPlays: analytics?.totalAudioPlays ?? null,
+    playsByLandmark: analytics?.playsByLandmark ?? {},
   };
 
   const value = {
