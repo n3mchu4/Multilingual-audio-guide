@@ -24,6 +24,7 @@ import {
 import { createTokenService } from '../../functions/src/services/tokenService.js';
 import { AUTH_ERROR_CODES } from '../../shared/constants/auth.js';
 import { getFeaturesForUserType, USER_TYPES } from '../../shared/constants/roles.js';
+import { recordPing, recordAudioPlay, getAnalyticsData } from './analytics-service.js';
 const port=Number(process.env.DB_API_PORT ?? 3002);
 if (!Number.isInteger(port) || port<1 || port>65535) throw new Error('Invalid DB_API_PORT');
 const allowedOrigin=process.env.DB_API_CORS_ORIGIN ?? 'http://localhost:5173';
@@ -122,8 +123,6 @@ const server=http.createServer(async (req,res)=>{
     const url=new URL(req.url,'http://localhost');
     if (url.pathname.startsWith('/media/')) {await serveMedia(req,res,url.pathname);return;}
     if (req.method==='HEAD') {res.writeHead(405);res.end();return;}
-<<<<<<< HEAD
-=======
     if (req.method==='POST' && url.pathname==='/api/analytics/ping') {
       const body = await readJson(req);
       if (typeof body?.sessionId !== 'string' || typeof body?.visitorId !== 'string'
@@ -149,7 +148,6 @@ const server=http.createServer(async (req,res)=>{
       if (!await authenticatedAdmin(req)) {sendJson(res,401,{error:'Admin authentication required'});return;}
       sendJson(res,200,{data:await getAnalyticsData()});return;
     }
->>>>>>> ff14043df900dfdba5aaea0121577e5e7be6dad0
     if (req.method==='POST' && url.pathname==='/api/analytics/visitors') {
       const body=await readJson(req);
       const visitorId=String(body?.visitorId ?? '');

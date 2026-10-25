@@ -1,9 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { pool, query } from './database.js';
-<<<<<<< HEAD
-=======
 import { getAnalyticsData } from './analytics-service.js';
->>>>>>> ff14043df900dfdba5aaea0121577e5e7be6dad0
 
 const formatDate = (value) =>
   new Date(value).toLocaleDateString('vi-VN', {
