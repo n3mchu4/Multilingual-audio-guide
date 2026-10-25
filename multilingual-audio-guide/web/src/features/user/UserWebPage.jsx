@@ -30,7 +30,6 @@ function mapLandmark(landmark) {
     image: landmark.background_image_url || "",
     gallery: landmark.images || [],
     buses: landmark.buses || [],
-    time: "5–7 phút",
   };
 }
 
@@ -78,13 +77,13 @@ export default function UserWebPage() {
     async function loadPlaces() {
       try {
         const response = await fetch(`${API_BASE}/api/landmarks?lang=vi`, { signal: controller.signal });
-        if (!response.ok) throw new Error("Không tải được địa danh từ PostgreSQL.");
+        if (!response.ok) throw new Error("Không tải được danh sách địa danh. Vui lòng thử lại sau.");
         const result = await response.json();
         if (!Array.isArray(result.data)) throw new Error("API trả về danh sách địa danh không hợp lệ.");
         setPlaces(result.data.map(mapLandmark));
       } catch (error) {
         if (!controller.signal.aborted) {
-          setLoadError(error.message || "Không kết nối được PostgreSQL.");
+          setLoadError(error.message || "Không kết nối được máy chủ. Vui lòng kiểm tra mạng và thử lại.");
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -115,7 +114,7 @@ export default function UserWebPage() {
       <main className="sg-web" style={{ padding: 32 }}>
         <h1>Saigon Audio Guide</h1>
         <p role={loadError ? "alert" : "status"}>
-          {loading ? "Đang tải địa danh từ PostgreSQL..." : loadError || "Chưa có địa danh trong cơ sở dữ liệu."}
+          {loading ? "Đang tải danh sách địa danh..." : loadError || "Chưa có địa danh nào được công bố."}
         </p>
       </main>
     );
@@ -271,8 +270,8 @@ export default function UserWebPage() {
                 {tr(
                   "placesSubtitle",
                   lang === "vi"
-                    ? `${places.length} địa danh được tải từ PostgreSQL.`
-                    : `${places.length} landmarks loaded from PostgreSQL.`,
+                    ? `${places.length} địa danh để bạn khám phá.`
+                    : `${places.length} landmarks to explore.`,
                 )}
               </p>
             </div>
@@ -415,7 +414,7 @@ export default function UserWebPage() {
               <p>
                 {tr(
                   "aboutDesc",
-                  "Nội dung địa danh được tải từ PostgreSQL; ảnh và audio được phát từ các URL Storage đã lưu trong cơ sở dữ liệu. Bản đồ và lộ trình hiện vẫn là minh họa.",
+                  "Nội dung địa danh, ảnh và thuyết minh audio được cập nhật từ hệ thống quản lý của Saigon Audio Guide. Bản đồ và lộ trình hiện vẫn là minh họa.",
                 )}
               </p>
             </div>
@@ -440,7 +439,7 @@ export default function UserWebPage() {
         />
         <div className="footer">
           {
-            "SAIGON GUIDE · POSTGRESQL + STORAGE · QUẬN 1, TP. HỒ CHÍ MINH"
+            "SAIGON GUIDE · QUẬN 1, TP. HỒ CHÍ MINH"
           }
         </div>
       </div>

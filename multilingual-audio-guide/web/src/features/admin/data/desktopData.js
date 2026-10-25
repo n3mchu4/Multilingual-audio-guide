@@ -248,7 +248,7 @@ export const words = {
     selectLanguage: "Sử dụng",
     aboutSettings: "Về Saigon Guide",
     aboutDesc:
-      "Bản mẫu giao diện phục vụ đồ án thuyết minh đa ngôn ngữ. Bản đồ, nội dung chỉ đường và trình phát âm thanh trong mẫu là minh họa; có thể kết nối dữ liệu và dịch vụ thật ở giai đoạn phát triển.",
+      "Nội dung địa danh, ảnh và thuyết minh audio được cập nhật từ hệ thống quản lý của Saigon Audio Guide. Bản đồ và lộ trình hiện vẫn là minh họa.",
     routeResultTitle: "Lộ trình gợi ý",
     busConnect: "Kết nối bus",
     busTitle: "Các tuyến xe buýt gần điểm đến",
@@ -321,7 +321,7 @@ export const words = {
     selectLanguage: "Use English",
     aboutSettings: "About Saigon Guide",
     aboutDesc:
-      "This is a UI prototype for a multilingual audio guide project. The map, directions and audio player are illustrative and can be connected to real data and services during development.",
+      "Landmark content, photos and audio guides are managed through the Saigon Audio Guide system. The map and routes are still illustrative.",
     routeResultTitle: "Suggested route",
     busConnect: "Connect bus",
     busTitle: "Bus routes near destination",

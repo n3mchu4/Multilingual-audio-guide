@@ -5,6 +5,7 @@ import {
   Route,
   Routes,
   useNavigate,
+  useParams,
 } from 'react-router-dom'
 import { USER_TYPES } from '@shared/constants/roles.js'
 import AdminRoutes from '../features/admin/AdminRoutes'
@@ -12,13 +13,11 @@ import ManagerRoutes from '../features/manager/ManagerRoutes'
 import LoginPage from '../features/auth/LoginPage'
 import RequireAuth from '../features/auth/RequireAuth'
 import Home from '../pages/Home'
-import PlaceList from '../pages/PlaceList'
-import PlaceDetail from '../pages/PlaceDetail'
 import useIdleLogout from '../hooks/useIdleLogout'
 import {
+  selectIsAuthenticated,
   useAppStore,
 } from '../store/useAppStore'
-import usePresence from '../hooks/usePresence';
 import UserWebPage from "../features/user/UserWebPage";
 function ProtectedHome() {
   const navigate = useNavigate()
@@ -42,22 +41,23 @@ function ProtectedHome() {
   return <Home onLogOff={logOff} />
 }
 
-function Presence() {
-  usePresence();
-  return null;
+// W01: các link cũ /places/:id (đã in QR / đã chia sẻ) chuyển sang giao diện chính /user/:id.
+function PlaceRedirect() {
+  const { id } = useParams()
+  return <Navigate to={id ? `/user/${encodeURIComponent(id)}` : '/user'} replace />
 }
 
 export default function AppRouter() {
+  const isAuthenticated = useAppStore(selectIsAuthenticated)
 
   return (
     <BrowserRouter>
-      <Presence />
       <Routes>
-        {/* Trang dành cho khách tham quan: không yêu cầu đăng nhập */}
-        <Route path="/" element={<UserWebPage />} />
-        <Route path="/user" element={<UserWebPage />} />
-        <Route path="/places" element={<PlaceList />} />
-        <Route path="/places/:id" element={<PlaceDetail />} />
+        {/* Giao diện khách chính: không yêu cầu đăng nhập. /user/:placeId mở thẳng một địa danh. */}
+        {/* Một Route duy nhất (placeId tùy chọn) để đổi địa danh không làm tải lại cả trang khách. */}
+        <Route path="/user/:placeId?" element={<UserWebPage />} />
+        <Route path="/places" element={<Navigate to="/user" replace />} />
+        <Route path="/places/:id" element={<PlaceRedirect />} />
 
         <Route path="/login" element={<LoginPage />} />
 
@@ -79,19 +79,21 @@ export default function AppRouter() {
           }
         />
 
+        {/* Khách vào gốc site thì thấy giao diện khách; người đã đăng nhập thấy Home theo vai trò. */}
         <Route
-          path="/home"
+          path="/"
           element={
-            <RequireAuth>
-              <ProtectedHome />
-            </RequireAuth>
+            isAuthenticated ? (
+              <RequireAuth>
+                <ProtectedHome />
+              </RequireAuth>
+            ) : (
+              <Navigate to="/user" replace />
+            )
           }
         />
 
-        <Route
-          path="*"
-          element={<Navigate to="/" replace />}
-        />
+        <Route path="*" element={<Navigate to="/user" replace />} />
       </Routes>
     </BrowserRouter>
   )
