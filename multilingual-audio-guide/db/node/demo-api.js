@@ -24,7 +24,6 @@ import {
 import { createTokenService } from '../../functions/src/services/tokenService.js';
 import { AUTH_ERROR_CODES } from '../../shared/constants/auth.js';
 import { getFeaturesForUserType, USER_TYPES } from '../../shared/constants/roles.js';
-import { recordPing, recordAudioPlay, getAnalyticsData } from './analytics-service.js';
 const port=Number(process.env.DB_API_PORT ?? 3002);
 if (!Number.isInteger(port) || port<1 || port>65535) throw new Error('Invalid DB_API_PORT');
 const allowedOrigin=process.env.DB_API_CORS_ORIGIN ?? 'http://localhost:5173';
@@ -123,27 +122,6 @@ const server=http.createServer(async (req,res)=>{
     const url=new URL(req.url,'http://localhost');
     if (url.pathname.startsWith('/media/')) {await serveMedia(req,res,url.pathname);return;}
     if (req.method==='HEAD') {res.writeHead(405);res.end();return;}
-<<<<<<< HEAD
-    if (url.pathname==='/api/analytics/ping') {
-      const body = req.method==='POST' ? await readJson(req).catch(()=>({})) : {};
-      const activeUsers = recordPing(body?.sessionId, body?.platform ?? 'web', body?.path ?? '/');
-      sendJson(res, 200, { ok: true, activeUsers });
-      return;
-    }
-    if (req.method==='POST' && url.pathname==='/api/analytics/play') {
-      const body = await readJson(req).catch(()=>({}));
-      const result = await recordAudioPlay({
-        landmarkId: String(body?.landmarkId ?? ''),
-        lang: String(body?.lang ?? 'vi'),
-        title: String(body?.title ?? ''),
-      });
-      sendJson(res, 200, { ok: true, ...result });
-      return;
-    }
-    if (req.method==='GET' && url.pathname==='/api/analytics/stats') {
-      sendJson(res, 200, { ok: true, data: getAnalyticsData() });
-      return;
-=======
     if (req.method==='POST' && url.pathname==='/api/analytics/visitors') {
       const body=await readJson(req);
       const visitorId=String(body?.visitorId ?? '');
@@ -175,7 +153,6 @@ const server=http.createServer(async (req,res)=>{
         FROM visitor CROSS JOIN selected_landmark`,[visitorId,landmarkId,language]);
       if (!rowCount) {sendJson(res,404,{error:'Landmark not found'});return;}
       sendJson(res,201,{ok:true});return;
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
     }
     if (req.method==='POST' && url.pathname==='/api/auth/login') {
       const body=await readJson(req);
