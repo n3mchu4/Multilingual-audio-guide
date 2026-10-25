@@ -6,7 +6,7 @@ import { API_BASE, getVisitorId } from '../services/analytics';
 const sessionId = createVisitorId(); // A separate session for each browser tab.
 export default function usePresence() {
   const { pathname } = useLocation();
-  const publicPage = pathname === '/' || pathname === '/user' || /^\/places(?:\/[^/]+)?\/?$/.test(pathname);
+  const publicPage = pathname === '/' || /^\/user(?:\/[^/]+)?\/?$/.test(pathname) || /^\/places(?:\/[^/]+)?\/?$/.test(pathname);
   useEffect(() => {
     if (!publicPage) return;
     let leaving = false;

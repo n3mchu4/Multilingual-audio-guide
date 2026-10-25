@@ -306,18 +306,50 @@ export function DetailContent({
           </button>
           <div className="audio-info">
             <strong>{place.name[lang]}</strong>
-            <small>
-              {audio.playing
-                ? lang === "vi"
-                  ? "Đang phát audio…"
-                  : "Playing audio…"
-                : audioUrl
-                  ? lang === "vi" ? "Sẵn sàng phát" : "Ready to play"
-                  : lang === "vi" ? "Chưa có tệp audio" : "No audio file configured"}
+            <small aria-live="polite">
+              {audio.error
+                ? lang === "vi" ? "Không phát được audio" : "Audio unavailable"
+                : audio.loading
+                  ? lang === "vi" ? "Đang tải audio…" : "Loading audio…"
+                  : audio.playing
+                    ? lang === "vi" ? "Đang phát audio…" : "Playing audio…"
+                    : audio.ended
+                      ? lang === "vi" ? "Đã phát xong" : "Finished playing"
+                      : audioUrl
+                        ? lang === "vi" ? "Sẵn sàng phát" : "Ready to play"
+                        : lang === "vi" ? "Chưa có tệp audio" : "No audio file configured"}
             </small>
-            <div className="audio-progress">
-              <span style={{ width: `${audio.progress}%` }} />
-            </div>
+            <input
+              type="range"
+              className="audio-seek"
+              min={0}
+              max={1000}
+              step={1}
+              value={Math.round(audio.progress * 10)}
+              style={{ "--seek": `${audio.progress}%` }}
+              disabled={!audioUrl || !audio.duration}
+              onChange={(event) => audio.seekRatio(Number(event.target.value) / 1000)}
+              aria-label={lang === "vi" ? "Tua audio" : "Seek audio"}
+              aria-valuetext={`${time(audio.elapsed)} / ${time(audio.duration)}`}
+            />
+          </div>
+          <div className="audio-skip">
+            <button
+              type="button"
+              onClick={() => audio.skip(-10)}
+              disabled={!audioUrl || !audio.duration}
+              aria-label={lang === "vi" ? "Lùi 10 giây" : "Back 10 seconds"}
+            >
+              ↺10
+            </button>
+            <button
+              type="button"
+              onClick={() => audio.skip(10)}
+              disabled={!audioUrl || !audio.duration}
+              aria-label={lang === "vi" ? "Tiến 10 giây" : "Forward 10 seconds"}
+            >
+              10↻
+            </button>
           </div>
           <div className="audio-time">
             {time(audio.elapsed)} / {time(audio.duration)}
@@ -327,11 +359,16 @@ export function DetailContent({
           <p className="audio-note" role={audio.error ? "alert" : undefined}>
             {audio.error
               ? lang === "vi"
-                ? "Không thể phát audio. Vui lòng thử lại sau."
-                : "Unable to play the audio. Please try again later."
+                ? "Không thể tải hoặc phát audio. Vui lòng kiểm tra mạng rồi thử lại."
+                : "Unable to load or play the audio. Please check your connection and try again."
               : lang === "vi"
                 ? "Địa danh này chưa có thuyết minh audio bằng tiếng Việt."
                 : "This landmark does not have an English audio guide yet."}
+            {audio.error && (
+              <button type="button" className="audio-retry" onClick={audio.retry}>
+                {lang === "vi" ? "Thử lại" : "Retry"}
+              </button>
+            )}
           </p>
         )}
       </section>
@@ -460,13 +497,15 @@ export function MiniAudioPlayer({
       <div className={mobile ? "mini-audio-details" : "mini-audio-info"}>
         <strong>{place.name[lang]}</strong>
         <small>
-          {audio.playing
-            ? lang === "vi"
-              ? "Đang phát audio…"
-              : "Playing audio…"
-            : lang === "vi"
-              ? "Đã tạm dừng"
-              : "Paused"}
+          {audio.error
+            ? lang === "vi" ? "Không phát được audio" : "Audio unavailable"
+            : audio.loading
+              ? lang === "vi" ? "Đang tải audio…" : "Loading audio…"
+              : audio.playing
+                ? lang === "vi" ? "Đang phát audio…" : "Playing audio…"
+                : audio.ended
+                  ? lang === "vi" ? "Đã phát xong" : "Finished playing"
+                  : lang === "vi" ? "Đã tạm dừng" : "Paused"}
         </small>
         {!mobile && (
           <div className="mini-audio-progress">

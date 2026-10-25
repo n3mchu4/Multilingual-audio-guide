@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE, getVisitorId } from '../../services/analytics';
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useGuideState } from "../../hooks/useGuideState";
+import usePresence from "../../hooks/usePresence";
 import {
   SpotList,
   QuickList,
@@ -37,7 +38,13 @@ export default function UserWebPage() {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
   const visitorIdRef = useRef("");
+  const { placeId: routePlaceId } = useParams();
+  const navigate = useNavigate();
+
+  // W10: gửi heartbeat để backend biết khách đang online (tab ẩn/đóng thì báo không hoạt động).
+  usePresence();
 
   useEffect(() => {
     const visitorId = getVisitorId();
@@ -74,6 +81,8 @@ export default function UserWebPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    // W13: tối đa 10 giây; quá hạn hoặc mất mạng thì báo lỗi kèm nút "Thử lại".
+    const timeout = setTimeout(() => controller.abort("timeout"), 10_000);
     async function loadPlaces() {
       try {
         const response = await fetch(`${API_BASE}/api/landmarks?lang=vi`, { signal: controller.signal });
@@ -81,17 +90,27 @@ export default function UserWebPage() {
         const result = await response.json();
         if (!Array.isArray(result.data)) throw new Error("API trả về danh sách địa danh không hợp lệ.");
         setPlaces(result.data.map(mapLandmark));
+        setLoadError("");
       } catch (error) {
-        if (!controller.signal.aborted) {
-          setLoadError(error.message || "Không kết nối được máy chủ. Vui lòng kiểm tra mạng và thử lại.");
-        }
+        if (controller.signal.aborted && controller.signal.reason !== "timeout") return;
+        setLoadError(
+          controller.signal.reason === "timeout"
+            ? "Máy chủ phản hồi quá lâu. Vui lòng kiểm tra mạng và thử lại."
+            : error.message || "Không kết nối được máy chủ. Vui lòng kiểm tra mạng và thử lại.",
+        );
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        clearTimeout(timeout);
+        if (!controller.signal.aborted || controller.signal.reason === "timeout") setLoading(false);
       }
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
     void loadPlaces();
-    return () => controller.abort();
-  }, []);
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [reloadKey]);
 
 
   const {
@@ -103,12 +122,30 @@ export default function UserWebPage() {
     currentPlace,
     scrollRef,
     tr,
-    showPage,
+    showPage: showPageState,
     setLanguage,
-    openDetail,
+    openDetail: openDetailState,
     enterApp,
     audio,
-  } = useGuideState(words, places, recordAudioListen);
+    routeIndex,
+  } = useGuideState(words, places, recordAudioListen, routePlaceId);
+
+  // W09: địa danh đang mở nằm trên URL (/user/:placeId) để chia sẻ, quét QR và tải lại đều đúng trang.
+  const openDetail = (index) => {
+    const id = places[index]?.id;
+    openDetailState(index);
+    if (id) navigate(`/user/${encodeURIComponent(id)}`);
+  };
+  const showPage = (next) => {
+    showPageState(next);
+    if (next === "home" && routePlaceId) navigate("/user");
+  };
+
+  // Link tới địa danh không tồn tại (đã ẩn/xóa): quay về danh sách thay vì hiện trang trống.
+  useEffect(() => {
+    if (places.length && routePlaceId && routeIndex < 0) navigate("/user", { replace: true });
+  }, [places.length, routePlaceId, routeIndex, navigate]);
+
   if (loading || loadError || places.length === 0) {
     return (
       <main className="sg-web" style={{ padding: 32 }}>
@@ -116,6 +153,16 @@ export default function UserWebPage() {
         <p role={loadError ? "alert" : "status"}>
           {loading ? "Đang tải danh sách địa danh..." : loadError || "Chưa có địa danh nào được công bố."}
         </p>
+        {!loading && (
+          <button
+            type="button"
+            className="primary-btn"
+            style={{ width: "auto", padding: "12px 22px" }}
+            onClick={() => setReloadKey((key) => key + 1)}
+          >
+            Thử lại
+          </button>
+        )}
       </main>
     );
   }
