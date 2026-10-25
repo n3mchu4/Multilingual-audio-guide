@@ -7,12 +7,10 @@ VALUES
  ('independence-palace', 'Dinh Độc Lập', 'Independence Palace', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Dinh Độc Lập. Thay bằng bài thuyết minh của bạn.', 'Sample Independence Palace narration. Replace with your own transcript.'),
  ('notre-dame-cathedral', 'Nhà thờ Đức Bà', 'Notre Dame Cathedral', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Nhà thờ Đức Bà. Thay bằng bài thuyết minh của bạn.', 'Sample Notre Dame Cathedral narration. Replace with your own transcript.'),
  ('central-post-office', 'Bưu điện Trung tâm', 'Central Post Office', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Bưu điện Trung tâm. Thay bằng bài thuyết minh của bạn.', 'Sample Central Post Office narration. Replace with your own transcript.'),
- ( 'bach-dang-wharf', 'Bến Bạch Đằng','Bach Dang Wharf', 'Nội dung mẫu ','Sample content.', 'Sample content for Bach Dang Wharf.'),
- ('saigon-opera-house', 'Nhà hát Thành phố', 'Saigon Opera House', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Nhà hát Thành phố. Thay bằng bài thuyết minh của bạn.', 'Sample Saigon Opera House narration. Replace with your own transcript.')
- ('nguyen-van-binh-book-street',  'Đường Sách Nguyễn Văn Bình',  'Nguyen Van Binh Book Street', 'https://example.com/anh-nen-duong-sach.jpg', 'Nội dung mẫu Đường Sách Nguyễn Văn Bình.', 'Sample content for Nguyen Van Binh Book Street.'
-);)
+ ('bach-dang-wharf', 'Bến Bạch Đằng', 'Bach Dang Wharf', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Bến Bạch Đằng. Thay bằng bài thuyết minh của bạn.', 'Sample Bạch Đằng Wharf narration. Replace with your own transcript.'),
+ ('saigon-opera-house', 'Nhà hát Thành phố', 'Saigon Opera House', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Nhà hát Thành phố. Thay bằng bài thuyết minh của bạn.', 'Sample Saigon Opera House narration. Replace with your own transcript.'),
+ ('nguyen-van-binh-book-street', 'Đường Sách Nguyễn Văn Bình', 'Nguyen Van Binh Book Street', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Đường Sách Nguyễn Văn Bình. Thay bằng bài thuyết minh của bạn.', 'Sample Nguyen Van Binh Book Street narration. Replace with your own transcript.')
 ON CONFLICT (landmark_id) DO NOTHING;
-COMMIT;
 UPDATE public.landmarks SET
   background_image_url = 'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/ben-thanh-market/ben-thanh-market1.jpeg',
   audio_vi_url = 'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/ben-thanh-market/vi.mp3',
@@ -280,3 +278,4 @@ UPDATE public.landmarks SET description_vi = 'Công viên bờ kè ven sông Sà
 
 -- 7. Đường Sách Nguyễn Văn Bình
 UPDATE public.landmarks SET description_vi = 'Không gian văn hóa độc đáo giữa trung tâm thành phố, nơi hội tụ các gian hàng sách, cà phê và thường xuyên tổ chức các sự kiện giao lưu tác giả.', description_en = 'A unique cultural space in the city center, gathering book stalls, cafes, and regularly hosting author meet-and-greet events.' WHERE landmark_id = 'nguyen-van-binh-book-street';
+COMMIT;
