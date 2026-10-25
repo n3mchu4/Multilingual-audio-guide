@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   AppState,
   Image,
   ImageBackground,
+  Linking,
   PanResponder,
   Platform,
   Pressable,
@@ -14,6 +16,9 @@ import {
   View,
 } from "react-native";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Location from "expo-location";
+import { errorMessage } from "./services/apiClient";
 import {
   words,
   mapPoints,
@@ -22,7 +27,6 @@ import {
   API_BASE_URL,
 } from "./services/mobileData";
 
-import { buildTranscriptTimeline, findActiveTranscriptCue } from '../shared/utils/transcriptTiming.js';
 import { createVisitorId } from '../shared/utils/visitorId.js';
 import { startPresence } from '../shared/utils/presence.js';
 const mobileSessionId = createVisitorId();
@@ -42,6 +46,17 @@ const photo = (url) => {
 };
 
 const limit = (value) => Math.min(2.8, Math.max(0.7, value));
+
+// Khoảng cách đường chim bay (km) giữa hai toạ độ.
+const haversineKm = (a, b) => {
+  const rad = (d) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+};
 const formatTime = (millis) => {
   if (!millis || isNaN(millis)) return "00:00";
   const totalSeconds = Math.floor(millis / 1000);
@@ -184,12 +199,6 @@ function MapArea({
         {line.map((position, i) => (
           <View key={i} style={[styles.routeLine, position]} />
         ))}
-        <View
-          style={[
-            styles.userDot,
-            { left: `${userGps.x}%`, top: `${userGps.y}%` },
-          ]}
-        />
         {placesList.map((place, i) => {
           const pt = mapPoints[i % mapPoints.length];
           return (
@@ -222,6 +231,9 @@ export default function App() {
   const [placesList, setPlacesList] = useState([]);
   const [placesLoading, setPlacesLoading] = useState(true);
   const [placesError, setPlacesError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  const [userLoc, setUserLoc] = useState(null); // { lat, lng } vị trí thật
+  const [locStatus, setLocStatus] = useState("idle"); // idle | loading | ok | denied | error
   const [currentPlace, setCurrentPlace] = useState(0);
   const [playingPlaceIndex, setPlayingPlaceIndex] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -234,24 +246,38 @@ export default function App() {
   const tr = (key, fallback = key) =>
     words[lang]?.[key] ?? words.vi?.[key] ?? fallback;
 
+  // M04: nhớ ngôn ngữ đã chọn lần trước, bỏ qua màn chào nếu đã chọn.
+  useEffect(() => {
+    AsyncStorage.getItem("guideLang")
+      .then((saved) => {
+        if (saved === "vi" || saved === "en") {
+          setLang(saved);
+          setWelcomeLang(saved);
+          setEntered(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // M01-M03 + M10: tải danh sách địa danh, có thể tải lại khi lỗi.
   useEffect(() => {
     let active = true;
     async function loadData() {
+      setPlacesLoading(true);
+      setPlacesError("");
       try {
         const apiData = await fetchPlacesFromAPI();
-        if (active) {
-          setPlacesList(apiData);
-          setPlacesError("");
-        }
+        if (active) setPlacesList(apiData);
       } catch (error) {
-        if (active) setPlacesError(error.message || "Không kết nối được PostgreSQL API.");
+        if (active) setPlacesError(errorMessage(error, lang));
       } finally {
         if (active) setPlacesLoading(false);
       }
     }
     void loadData();
     return () => { active = false; };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reloadKey]);
 
   useEffect(() => startPresence({
     send: active => {
@@ -285,19 +311,23 @@ export default function App() {
   const pendingRef = useRef(null);
   const analyticsRef = useRef(null);
   const [audioError, setAudioError] = useState('');
+  const [audioLoading, setAudioLoading] = useState(false); // M06: đang tải audio
+  const [audioEnded, setAudioEnded] = useState(false);     // M06: đã phát xong
+  const loadTimer = useRef(null);
+  const barWidth = useRef(0);
+  const clearLoadTimer = () => {
+    if (loadTimer.current) { clearTimeout(loadTimer.current); loadTimer.current = null; }
+  };
   const [playingLanguage, setPlayingLanguage] = useState('vi');
   const matchesSelection = playingPlaceIndex === currentPlace && playingLanguage === lang;
   const transcriptText = place.history?.[lang] || '';
-  const timeline = useMemo(() => buildTranscriptTimeline(
-    transcriptText, place.transcriptCues?.[lang], matchesSelection ? status.duration : 0,
-  ), [transcriptText, place.transcriptCues, lang, matchesSelection, status.duration]);
-  const sentencesList = timeline.cues;
-  const activeSentenceIdx = matchesSelection && status.playing
-    ? findActiveTranscriptCue(sentencesList, status.currentTime) : -1;
+  const transcriptParagraphs = transcriptText.split(/\n+/).filter(Boolean);
 
   // Wait for the replacement source to load before seeking or starting playback.
   useEffect(() => {
     const subscription = player.addListener('playbackStatusUpdate', async next => {
+      if (next.isLoaded) { clearLoadTimer(); setAudioLoading(false); }
+      if (next.didJustFinish) setAudioEnded(true);
       if (next.playing && analyticsRef.current) {
         const event = analyticsRef.current;
         analyticsRef.current = null;
@@ -323,11 +353,26 @@ export default function App() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.pageHeading}>
           <Text style={styles.title}>Saigon Audio Guide</Text>
-          <Text style={styles.paragraph}>
-            {placesLoading
-              ? "Đang tải địa danh từ PostgreSQL..."
-              : placesError || "Chưa có địa danh trong cơ sở dữ liệu."}
-          </Text>
+          {placesLoading ? (
+            <>
+              <ActivityIndicator color={C.pink} style={{ marginTop: 16 }} />
+              <Text style={styles.paragraph}>
+                {lang === "vi" ? "Đang tải địa danh..." : "Loading places..."}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.paragraph}>
+                {placesError ||
+                  (lang === "vi"
+                    ? "Chưa có địa danh trong cơ sở dữ liệu."
+                    : "No places available yet.")}
+              </Text>
+              <Pressable style={styles.primary} onPress={() => setReloadKey((k) => k + 1)}>
+                <Text style={styles.primaryText}>{lang === "vi" ? "Thử lại" : "Retry"}</Text>
+              </Pressable>
+            </>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -348,10 +393,70 @@ export default function App() {
     analyticsRef.current = null;
     sourceRef.current = '';
     player.pause();
+    setAudioLoading(false);
+    setAudioEnded(false);
+    clearLoadTimer();
     setLang(next);
+    AsyncStorage.setItem("guideLang", next).catch(() => {});
+  };
+
+  // GPS: xin quyền và lấy vị trí hiện tại của người dùng.
+  const requestLocation = async () => {
+    setLocStatus("loading");
+    try {
+      const { status: perm } = await Location.requestForegroundPermissionsAsync();
+      if (perm !== "granted") {
+        setLocStatus("denied");
+        return null;
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setUserLoc(loc);
+      setLocStatus("ok");
+      return loc;
+    } catch {
+      setLocStatus("error");
+      return null;
+    }
+  };
+
+  const onMyLocation = () => {
+    if (locStatus === "denied") void Linking.openSettings();
+    else void requestLocation();
+  };
+
+  const distanceLabel = (p) => {
+    const vi = lang === "vi";
+    if (!p || p.lat == null || p.lng == null) return vi ? "Chưa có toạ độ" : "No coordinates";
+    if (locStatus === "loading") return vi ? "Đang lấy vị trí..." : "Getting location...";
+    if (locStatus === "denied") return vi ? "Chưa cấp quyền vị trí" : "Location permission denied";
+    if (!userLoc) return vi ? "Chưa có vị trí của bạn" : "Your location is unavailable";
+    const km = haversineKm(userLoc, p);
+    const text = km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+    return `${text} ${vi ? "(đường chim bay)" : "(straight line)"}`;
+  };
+
+  // Mở Google Maps chỉ đường đi bộ từ vị trí hiện tại tới địa danh.
+  const openDirections = async (p) => {
+    if (!p || p.lat == null || p.lng == null) {
+      setAudioError(lang === "vi" ? "Địa danh này chưa có toạ độ." : "This place has no coordinates yet.");
+      return;
+    }
+    const origin = userLoc ? `&origin=${userLoc.lat},${userLoc.lng}` : "";
+    const url =
+      `https://www.google.com/maps/dir/?api=1${origin}` +
+      `&destination=${p.lat},${p.lng}&travelmode=walking`;
+    try {
+      await Linking.openURL(url);
+    } catch {
+      setAudioError(lang === "vi" ? "Không mở được Google Maps." : "Could not open Google Maps.");
+    }
   };
 
   const choosePin = (index) => {
+    if (!userLoc && locStatus !== "denied" && locStatus !== "loading") void requestLocation();
     setSelected(index);
     setNavigating(false);
     setBusVisible(false);
@@ -369,6 +474,7 @@ export default function App() {
     const src = targetPlace?.audioUrl?.[lang];
     if (!src) { setAudioError('Chưa có audio cho ngôn ngữ đang chọn.'); return; }
     setAudioError('');
+    setAudioEnded(false);
     analyticsRef.current = { landmarkId: targetPlace.id, lang };
     setPlayingPlaceIndex(targetIndex);
     setPlayingLanguage(lang);
@@ -377,12 +483,34 @@ export default function App() {
         player.pause();
         sourceRef.current = src;
         pendingRef.current = { src, start: start ?? 0 };
+        setAudioLoading(true);
+        clearLoadTimer();
+        loadTimer.current = setTimeout(() => {
+          // M10: quá 15 giây không tải được audio thì báo lỗi, cho thử lại.
+          setAudioLoading(false);
+          pendingRef.current = null;
+          sourceRef.current = '';
+          player.pause();
+          setAudioError(lang === 'vi'
+            ? 'Không tải được audio. Kiểm tra mạng rồi bấm phát lại.'
+            : 'Could not load audio. Check your network and tap play again.');
+        }, 15000);
         player.replace(src);
       } else {
         if (start != null || player.currentTime >= player.duration) await player.seekTo(start ?? 0);
         player.play();
       }
-    } catch { setAudioError('Không thể phát audio.'); }
+    } catch {
+      setAudioLoading(false);
+      setAudioError(lang === 'vi' ? 'Không thể phát audio.' : 'Unable to play audio.');
+    }
+  };
+  // M05: chạm vào thanh tiến trình để tua
+  const seekToRatio = async (ratio) => {
+    if (!matchesSelection || !status.duration) return;
+    try {
+      await player.seekTo(Math.min(1, Math.max(0, ratio)) * status.duration);
+    } catch { /* bỏ qua */ }
   };
   const toggleAudio = (targetIndex = currentPlace) => {
     if (targetIndex === playingPlaceIndex && playingLanguage === lang && player.playing) player.pause();
@@ -533,8 +661,8 @@ export default function App() {
                   {placesList[selected]?.name[lang]}
                 </Text>
                 <Text style={styles.note}>
-                  {lang === "vi" ? "Khoảng cách mẫu: " : "Demo distance: "}
-                  {placesList[selected]?.dist}
+                  {lang === "vi" ? "Khoảng cách: " : "Distance: "}
+                  {distanceLabel(placesList[selected])}
                 </Text>
               </View>
               <Pressable onPress={closePanel}>
@@ -542,14 +670,21 @@ export default function App() {
               </Pressable>
             </View>
             <View style={styles.actionButtons}>
-              {!navigating && (
-                <Pressable
-                  style={styles.primarySmall}
-                  onPress={() => setNavigating(true)}
-                >
-                  <Text style={styles.whiteText}>➔ {tr("startNav")}</Text>
-                </Pressable>
-              )}
+              <Pressable
+                style={styles.primarySmall}
+                onPress={() => openDirections(placesList[selected])}
+              >
+                <Text style={styles.whiteText}>
+                  ➔ {lang === "vi" ? "Chỉ đường" : "Directions"}
+                </Text>
+              </Pressable>
+              <Pressable style={styles.secondarySmall} onPress={onMyLocation}>
+                <Text style={styles.pinkText}>
+                  📍 {locStatus === "denied"
+                    ? (lang === "vi" ? "Mở cài đặt" : "Settings")
+                    : (lang === "vi" ? "Vị trí của tôi" : "My location")}
+                </Text>
+              </Pressable>
               <Pressable
                 style={styles.secondarySmall}
                 onPress={() => setBusVisible((value) => !value)}
@@ -631,30 +766,41 @@ export default function App() {
           <Text style={styles.meta}>{place.time}</Text>
         </View>
         <View style={styles.player}>
-          <Pressable 
-            style={styles.playButton} 
+          <Pressable
+            style={styles.playButton}
             onPress={() => toggleAudio(currentPlace)}
+            disabled={audioLoading && matchesSelection}
           >
-            <Text style={styles.whiteText}>
-              {status.playing && matchesSelection ? "Ⅱ" : "▶"}
-            </Text>
+            {audioLoading && matchesSelection ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.whiteText}>
+                {status.playing && matchesSelection ? "Ⅱ" : audioEnded && matchesSelection ? "↺" : "▶"}
+              </Text>
+            )}
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={styles.textStrong}>{place.name[lang]}</Text>
-            <View style={styles.progress}>
-              <View
-                style={[
-                  styles.progressFilled,
-                  {
-                    width: `${
-                      status.duration && matchesSelection
-                        ? (status.currentTime / status.duration) * 100
-                        : 0
-                    }%`,
-                  },
-                ]}
-              />
-            </View>
+            <Pressable
+              hitSlop={8}
+              onLayout={(e) => { barWidth.current = e.nativeEvent.layout.width; }}
+              onPress={(e) => seekToRatio(e.nativeEvent.locationX / (barWidth.current || 1))}
+            >
+              <View style={styles.progress}>
+                <View
+                  style={[
+                    styles.progressFilled,
+                    {
+                      width: `${
+                        status.duration && matchesSelection
+                          ? (status.currentTime / status.duration) * 100
+                          : 0
+                      }%`,
+                    },
+                  ]}
+                />
+              </View>
+            </Pressable>
           </View>
           <Text style={styles.meta}>
             {matchesSelection
@@ -662,41 +808,32 @@ export default function App() {
               : "00:00 / 00:00"}
           </Text>
         </View>
+        {audioLoading && matchesSelection ? (
+          <Text style={styles.note}>{lang === "vi" ? "Đang tải audio..." : "Loading audio..."}</Text>
+        ) : null}
+        {audioEnded && matchesSelection ? (
+          <Text style={styles.note}>
+            {lang === "vi" ? "Đã phát xong. Bấm ↺ để nghe lại." : "Finished. Tap ↺ to replay."}
+          </Text>
+        ) : null}
+        {audioError ? (
+          <Text accessibilityRole="alert" style={styles.errorText}>{audioError}</Text>
+        ) : null}
       </View>
       <View style={styles.section}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.cardTitle}>{tr("transcriptTitle")}</Text>
-          <Text style={{ fontSize: 11, color: C.pink, fontWeight: "700" }}>
-            {activeSentenceIdx >= 0
-              ? `${lang === "vi" ? "Đang đọc câu" : "Sentence"} ${activeSentenceIdx + 1}/${sentencesList.length}`
-              : (lang === "vi" ? "Chạm câu để nghe" : "Tap sentence to play")}
-          </Text>
-        </View>
-        <View style={{ marginTop: 12, gap: 8 }}>
-          {audioError ? <Text accessibilityRole="alert">{audioError}</Text> : null}
-          {timeline.estimated && <Text>{lang === 'vi' ? 'Mốc câu ước lượng; chưa có mốc căn theo audio.' : 'Estimated sentence timing; audio alignment is not available yet.'}</Text>}
-          {!sentencesList.length && <Text>{transcriptText}</Text>}
-          {sentencesList.map((item, idx) => {
-            const isActive = idx === activeSentenceIdx;
-            return (
-              <Pressable
-                key={idx}
-                disabled={!place.audioUrl?.[lang]}
-                onPress={() => { void playAudio(currentPlace, item.start); }}
-                style={{
-                  padding: 10,
-                  borderRadius: 10,
-                  backgroundColor: isActive ? "#fce7f3" : "#f7f8f6",
-                  borderLeftWidth: 3,
-                  borderLeftColor: isActive ? C.pink : "transparent",
-                }}
-              >
-                <Text style={{ fontSize: 13, lineHeight: 20, color: isActive ? C.ink : "#555", fontWeight: isActive ? "700" : "400" }}>
-                  {item.text}
-                </Text>
-              </Pressable>
-            );
-          })}
+        <Text style={styles.cardTitle}>{tr("transcriptTitle")}</Text>
+        <View style={{ marginTop: 12, gap: 10 }}>
+          {transcriptParagraphs.length === 0 ? (
+            <Text style={styles.paragraph}>
+              {lang === "vi" ? "Chưa có nội dung văn bản." : "No transcript available."}
+            </Text>
+          ) : (
+            transcriptParagraphs.map((text, idx) => (
+              <Text key={idx} style={{ fontSize: 14, lineHeight: 22, color: C.ink }}>
+                {text}
+              </Text>
+            ))
+          )}
         </View>
       </View>
       {place.gallery && place.gallery.length > 0 && (
@@ -1062,6 +1199,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   progressFilled: { height: 4, backgroundColor: C.pink, borderRadius: 3 },
+  errorText: { color: "#b3261e", fontSize: 12, lineHeight: 18, marginTop: 6 },
   galleryPhoto: {
     width: 145,
     height: 145,

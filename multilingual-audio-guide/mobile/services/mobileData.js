@@ -1,11 +1,20 @@
-export const API_BASE_URL = (
-  process.env.EXPO_PUBLIC_GUIDE_API_URL || "http://localhost:3002"
-).replace(/\/$/, "");
+import { apiGet, API_BASE_URL } from "./apiClient";
+
+export { API_BASE_URL };
+
+// Toạ độ dự phòng (xấp xỉ) nếu API/CSDL chưa trả latitude/longitude.
+const FALLBACK_COORDS = {
+  "ben-thanh-market": { lat: 10.772461, lng: 106.698055 },
+  "independence-palace": { lat: 10.776889, lng: 106.695278 },
+  "notre-dame-cathedral": { lat: 10.779785, lng: 106.699018 },
+  "central-post-office": { lat: 10.779953, lng: 106.699868 },
+  "bach-dang-wharf": { lat: 10.773200, lng: 106.706800 },
+  "saigon-opera-house": { lat: 10.776611, lng: 106.703056 },
+  "nguyen-van-binh-book-street": { lat: 10.780030, lng: 106.699660 },
+};
 
 export const fetchPlacesFromAPI = async () => {
-  const response = await fetch(`${API_BASE_URL}/api/landmarks?lang=vi`);
-  if (!response.ok) throw new Error(`Không tải được địa danh (HTTP ${response.status}).`);
-  const json = await response.json();
+  const json = await apiGet("/api/landmarks?lang=vi");
   if (!Array.isArray(json.data)) throw new Error("API không trả về danh sách địa danh hợp lệ.");
   return json.data.map((item) => ({
     id: item.id,
@@ -35,6 +44,8 @@ export const fetchPlacesFromAPI = async () => {
     },
     image: item.background_image_url || "",
     gallery: item.images || [],
+    lat: item.latitude != null ? Number(item.latitude) : FALLBACK_COORDS[item.id]?.lat ?? null,
+    lng: item.longitude != null ? Number(item.longitude) : FALLBACK_COORDS[item.id]?.lng ?? null,
     time: "5–7 phút",
     bus: "",
     dist: "",
