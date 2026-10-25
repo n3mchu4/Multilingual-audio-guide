@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AppState,
   Image,
   ImageBackground,
   PanResponder,
@@ -12,7 +13,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useAudioPlayer } from "expo-audio";
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import {
   words,
   mapPoints,
@@ -20,6 +21,11 @@ import {
   fetchPlacesFromAPI,
   API_BASE_URL,
 } from "./services/mobileData";
+
+import { buildTranscriptTimeline, findActiveTranscriptCue } from '../shared/utils/transcriptTiming.js';
+import { createVisitorId } from '../shared/utils/visitorId.js';
+import { startPresence } from '../shared/utils/presence.js';
+const mobileSessionId = createVisitorId();
 
 const C = {
   ink: "#17212b",
@@ -247,13 +253,19 @@ export default function App() {
     return () => { active = false; };
   }, []);
 
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/analytics/ping`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ platform: "mobile", path: "/mobile-app" }),
-    }).catch(() => {});
-  }, []);
+  useEffect(() => startPresence({
+    send: active => {
+      void fetch(`${API_BASE_URL}/api/analytics/ping`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: mobileSessionId, visitorId: mobileSessionId, platform: 'mobile', active }),
+      }).catch(() => {});
+    },
+    isActive: () => AppState.currentState === 'active',
+    subscribe: ping => {
+      const subscription = AppState.addEventListener('change', ping);
+      return () => subscription.remove();
+    },
+  }), []);
 
   const place = placesList[currentPlace] || placesList[0] || {
     id: "",
@@ -267,30 +279,44 @@ export default function App() {
   const playingPlace = placesList[playingPlaceIndex] || place;
   
   // Audio Player phát nguồn audio của địa danh đang phát
-  const audioSource = playingPlace?.audioUrl?.[lang];
-  const player = useAudioPlayer(audioSource);
+  const player = useAudioPlayer(null, { updateInterval: 250 });
+  const status = useAudioPlayerStatus(player);
+  const sourceRef = useRef('');
+  const pendingRef = useRef(null);
+  const analyticsRef = useRef(null);
+  const [audioError, setAudioError] = useState('');
+  const [playingLanguage, setPlayingLanguage] = useState('vi');
+  const matchesSelection = playingPlaceIndex === currentPlace && playingLanguage === lang;
+  const transcriptText = place.history?.[lang] || '';
+  const timeline = useMemo(() => buildTranscriptTimeline(
+    transcriptText, place.transcriptCues?.[lang], matchesSelection ? status.duration : 0,
+  ), [transcriptText, place.transcriptCues, lang, matchesSelection, status.duration]);
+  const sentencesList = timeline.cues;
+  const activeSentenceIdx = matchesSelection && status.playing
+    ? findActiveTranscriptCue(sentencesList, status.currentTime) : -1;
 
-  const transcriptText = place.history?.[lang] || "";
-  const sentencesList = useMemo(() => {
-    if (!transcriptText) return [];
-    const raw = transcriptText.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter(Boolean);
-    const totalChars = raw.reduce((sum, s) => sum + s.length, 0) || 1;
-    const dur = (player.duration && playingPlaceIndex === currentPlace) ? player.duration : 120;
-    let curr = 0;
-    return raw.map((sentence, idx) => {
-      const slice = (sentence.length / totalChars) * dur;
-      const start = curr;
-      const end = start + slice;
-      curr = end;
-      return { id: idx, text: sentence, start, end };
+  // Wait for the replacement source to load before seeking or starting playback.
+  useEffect(() => {
+    const subscription = player.addListener('playbackStatusUpdate', async next => {
+      if (next.playing && analyticsRef.current) {
+        const event = analyticsRef.current;
+        analyticsRef.current = null;
+        void fetch(`${API_BASE_URL}/api/analytics/play`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visitorId: mobileSessionId, ...event }),
+        }).catch(() => {});
+      }
+      const request = pendingRef.current;
+      if (!request || !next.isLoaded) return;
+      pendingRef.current = null;
+      try {
+        if (request.start > 0) await player.seekTo(request.start);
+        if (sourceRef.current !== request.src) return;
+        player.play();
+      } catch { setAudioError('Không thể phát đoạn audio đã chọn.'); }
     });
-  }, [transcriptText, player.duration, playingPlaceIndex, currentPlace]);
-
-  const activeSentenceIdx = useMemo(() => {
-    if (playingPlaceIndex !== currentPlace || !player.playing || sentencesList.length === 0) return -1;
-    const found = sentencesList.findIndex((s) => player.currentTime >= s.start && player.currentTime < s.end);
-    return found !== -1 ? found : sentencesList.length - 1;
-  }, [playingPlaceIndex, currentPlace, player.playing, player.currentTime, sentencesList]);
+    return () => subscription.remove();
+  }, [player]);
 
   if (placesLoading || placesError || placesList.length === 0) {
     return (
@@ -318,10 +344,11 @@ export default function App() {
   };
 
   const setLanguage = (next) => {
+    pendingRef.current = null;
+    analyticsRef.current = null;
+    sourceRef.current = '';
+    player.pause();
     setLang(next);
-    if (player.playing) {
-      player.pause();
-    }
   };
 
   const choosePin = (index) => {
@@ -337,36 +364,29 @@ export default function App() {
     setBusVisible(false);
   };
 
-  const toggleAudio = (targetIndex = currentPlace) => {
+  const playAudio = async (targetIndex, start = null) => {
     const targetPlace = placesList[targetIndex];
     const src = targetPlace?.audioUrl?.[lang];
-
-    if (!src) {
-      alert("Chưa có tệp âm thanh (audio_url) cho địa danh này trong Database.");
-      return;
-    }
-
-    if (targetIndex !== playingPlaceIndex) {
-      setPlayingPlaceIndex(targetIndex);
-      player.replace(src);
-      player.play();
-      fetch(`${API_BASE_URL}/api/analytics/play`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ landmarkId: targetPlace.id, lang, title: targetPlace.name[lang] }),
-      }).catch(() => {});
-    } else {
-      if (player.playing) {
+    if (!src) { setAudioError('Chưa có audio cho ngôn ngữ đang chọn.'); return; }
+    setAudioError('');
+    analyticsRef.current = { landmarkId: targetPlace.id, lang };
+    setPlayingPlaceIndex(targetIndex);
+    setPlayingLanguage(lang);
+    try {
+      if (sourceRef.current !== src) {
         player.pause();
+        sourceRef.current = src;
+        pendingRef.current = { src, start: start ?? 0 };
+        player.replace(src);
       } else {
+        if (start != null || player.currentTime >= player.duration) await player.seekTo(start ?? 0);
         player.play();
-        fetch(`${API_BASE_URL}/api/analytics/play`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ landmarkId: targetPlace.id, lang, title: targetPlace.name[lang] }),
-        }).catch(() => {});
       }
-    }
+    } catch { setAudioError('Không thể phát audio.'); }
+  };
+  const toggleAudio = (targetIndex = currentPlace) => {
+    if (targetIndex === playingPlaceIndex && playingLanguage === lang && player.playing) player.pause();
+    else void playAudio(targetIndex);
   };
 
   const welcome = (
@@ -616,7 +636,7 @@ export default function App() {
             onPress={() => toggleAudio(currentPlace)}
           >
             <Text style={styles.whiteText}>
-              {player.playing && playingPlaceIndex === currentPlace ? "Ⅱ" : "▶"}
+              {status.playing && matchesSelection ? "Ⅱ" : "▶"}
             </Text>
           </Pressable>
           <View style={{ flex: 1 }}>
@@ -627,8 +647,8 @@ export default function App() {
                   styles.progressFilled,
                   {
                     width: `${
-                      player.duration && playingPlaceIndex === currentPlace
-                        ? (player.currentTime / player.duration) * 100
+                      status.duration && matchesSelection
+                        ? (status.currentTime / status.duration) * 100
                         : 0
                     }%`,
                   },
@@ -637,8 +657,8 @@ export default function App() {
             </View>
           </View>
           <Text style={styles.meta}>
-            {playingPlaceIndex === currentPlace
-              ? `${formatTime(player.currentTime * 1000)} / ${formatTime(player.duration * 1000)}`
+            {matchesSelection
+              ? `${formatTime(status.currentTime * 1000)} / ${formatTime(status.duration * 1000)}`
               : "00:00 / 00:00"}
           </Text>
         </View>
@@ -653,22 +673,16 @@ export default function App() {
           </Text>
         </View>
         <View style={{ marginTop: 12, gap: 8 }}>
+          {audioError ? <Text accessibilityRole="alert">{audioError}</Text> : null}
+          {timeline.estimated && <Text>{lang === 'vi' ? 'Mốc câu ước lượng; chưa có mốc căn theo audio.' : 'Estimated sentence timing; audio alignment is not available yet.'}</Text>}
+          {!sentencesList.length && <Text>{transcriptText}</Text>}
           {sentencesList.map((item, idx) => {
             const isActive = idx === activeSentenceIdx;
             return (
               <Pressable
                 key={idx}
-                onPress={() => {
-                  if (playingPlaceIndex !== currentPlace) {
-                    toggleAudio(currentPlace);
-                  }
-                  if (player?.seekTo) {
-                    player.seekTo(item.start);
-                  }
-                  if (!player.playing) {
-                    player.play();
-                  }
-                }}
+                disabled={!place.audioUrl?.[lang]}
+                onPress={() => { void playAudio(currentPlace, item.start); }}
                 style={{
                   padding: 10,
                   borderRadius: 10,
@@ -740,7 +754,7 @@ export default function App() {
           </ScrollView>
 
           {/* ----- MINI AUDIO PLAYER TOÀN CỤC ----- */}
-          {player.playing && page !== "detail" && (
+          {status.playing && page !== "detail" && (
             <Pressable 
               style={styles.miniPlayer} 
               onPress={() => openDetail(playingPlaceIndex)}
@@ -749,7 +763,7 @@ export default function App() {
                 style={styles.playButtonSmall} 
                 onPress={() => toggleAudio(playingPlaceIndex)}
               >
-                <Text style={styles.whiteText}>{player.playing ? "Ⅱ" : "▶"}</Text>
+                <Text style={styles.whiteText}>{status.playing ? "Ⅱ" : "▶"}</Text>
               </Pressable>
               <View style={{ flex: 1, marginLeft: 10 }}>
                 <Text style={styles.miniTitle} numberOfLines={1}>

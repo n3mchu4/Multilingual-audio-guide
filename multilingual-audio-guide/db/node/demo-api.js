@@ -122,6 +122,34 @@ const server=http.createServer(async (req,res)=>{
     const url=new URL(req.url,'http://localhost');
     if (url.pathname.startsWith('/media/')) {await serveMedia(req,res,url.pathname);return;}
     if (req.method==='HEAD') {res.writeHead(405);res.end();return;}
+<<<<<<< HEAD
+=======
+    if (req.method==='POST' && url.pathname==='/api/analytics/ping') {
+      const body = await readJson(req);
+      if (typeof body?.sessionId !== 'string' || typeof body?.visitorId !== 'string'
+          || !/^[a-zA-Z0-9_-]{8,100}$/.test(body?.sessionId ?? '')
+          || !/^[a-zA-Z0-9_-]{8,100}$/.test(body?.visitorId ?? '')
+          || !['web','mobile'].includes(body?.platform)
+          || typeof body?.active !== 'boolean') {
+        sendJson(res,400,{error:'Valid sessionId, visitorId, platform and active are required'});return;
+      }
+      sendJson(res,200,{ok:true,activeUsers:recordPing(body)});return;
+    }
+    if (req.method==='POST' && url.pathname==='/api/analytics/play') {
+      const body = await readJson(req);
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(body?.landmarkId ?? '')
+          || !['vi','en'].includes(body?.lang)
+          || (body?.visitorId != null && !uuidPattern.test(body.visitorId))) {
+        sendJson(res,400,{error:'Valid landmarkId and lang are required'});return;
+      }
+      const saved = await recordAudioPlay(body);
+      sendJson(res,saved ? 201 : 404,saved ? {ok:true} : {error:'Landmark not found'});return;
+    }
+    if (req.method==='GET' && url.pathname==='/api/analytics/stats') {
+      if (!await authenticatedAdmin(req)) {sendJson(res,401,{error:'Admin authentication required'});return;}
+      sendJson(res,200,{data:await getAnalyticsData()});return;
+    }
+>>>>>>> ff14043df900dfdba5aaea0121577e5e7be6dad0
     if (req.method==='POST' && url.pathname==='/api/analytics/visitors') {
       const body=await readJson(req);
       const visitorId=String(body?.visitorId ?? '');
@@ -255,7 +283,7 @@ const server=http.createServer(async (req,res)=>{
     sendJson(res,404,{error:'Not found'});
   } catch(error) {
     const status=error.status ?? (error.code==='23505' ? 409 : 500);
-    console.error('API error:',error.code ?? error.name);
+    console.error('API error:', error.code ?? error.name, error.message);
     sendJson(res,status,{error:status===500?'Database request failed':error.message});
   }
 });

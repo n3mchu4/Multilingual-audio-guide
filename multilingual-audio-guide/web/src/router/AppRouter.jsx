@@ -16,9 +16,9 @@ import PlaceList from '../pages/PlaceList'
 import PlaceDetail from '../pages/PlaceDetail'
 import useIdleLogout from '../hooks/useIdleLogout'
 import {
-  selectIsAuthenticated,
   useAppStore,
 } from '../store/useAppStore'
+import usePresence from '../hooks/usePresence';
 import UserWebPage from "../features/user/UserWebPage";
 function ProtectedHome() {
   const navigate = useNavigate()
@@ -42,11 +42,16 @@ function ProtectedHome() {
   return <Home onLogOff={logOff} />
 }
 
+function Presence() {
+  usePresence();
+  return null;
+}
+
 export default function AppRouter() {
-  const isAuthenticated = useAppStore(selectIsAuthenticated)
 
   return (
     <BrowserRouter>
+      <Presence />
       <Routes>
         {/* Trang dành cho khách tham quan: không yêu cầu đăng nhập */}
         <Route path="/" element={<UserWebPage />} />
@@ -66,9 +71,6 @@ export default function AppRouter() {
         />
 
         <Route
-<<<<<<< HEAD
-          path="/home"
-=======
           path="/manager/*"
           element={
             <RequireAuth userType={USER_TYPES.MANAGER}>
@@ -78,8 +80,7 @@ export default function AppRouter() {
         />
 
         <Route
-          path="/"
->>>>>>> e0187099c5f6da426fb69cf8bec1f52b3ebbbd0b
+          path="/home"
           element={
             <RequireAuth>
               <ProtectedHome />
