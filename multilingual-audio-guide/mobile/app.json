@@ -6,16 +6,23 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "edgeToEdgeEnabled": true,
-      "adaptiveIcon": {
-        "backgroundColor": "#167d78"
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Ứng dụng dùng vị trí của bạn để tính khoảng cách và chỉ đường tới địa danh."
       }
     },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#167d78"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
     "plugins": [
-      "expo-audio"
+      "expo-audio",
+      "expo-asset"
     ]
   }
 }
