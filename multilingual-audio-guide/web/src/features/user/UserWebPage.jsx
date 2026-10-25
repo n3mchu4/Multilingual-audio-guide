@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { API_BASE, getVisitorId } from '../../services/analytics';
+import { Link } from "react-router-dom";
 import { useGuideState } from "../../hooks/useGuideState";
 import {
   SpotList,
@@ -9,36 +11,6 @@ import {
 import DesktopMap from "../admin/components/DesktopMap";
 import { words } from "../admin/data/desktopData";
 import "./UserWebPage.css";
-
-const VISITOR_ID_KEY = "saigon-audio-guide.visitor-id";
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function createVisitorId() {
-  const bytes = new Uint8Array(16);
-  if (globalThis.crypto?.getRandomValues) {
-    globalThis.crypto.getRandomValues(bytes);
-  } else {
-    bytes.forEach((_, index) => {
-      bytes[index] = Math.floor(Math.random() * 256);
-    });
-  }
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-function getVisitorId() {
-  try {
-    const existingId = window.localStorage.getItem(VISITOR_ID_KEY);
-    if (existingId && UUID_PATTERN.test(existingId)) return existingId;
-    const visitorId = createVisitorId();
-    window.localStorage.setItem(VISITOR_ID_KEY, visitorId);
-    return visitorId;
-  } catch {
-    return createVisitorId();
-  }
-}
 
 function mapLandmark(landmark) {
   return {
@@ -71,7 +43,7 @@ export default function UserWebPage() {
   useEffect(() => {
     const visitorId = getVisitorId();
     visitorIdRef.current = visitorId;
-    void fetch("/api/analytics/visitors", {
+    void fetch(`${API_BASE}/api/analytics/visitors`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ visitorId }),
@@ -88,7 +60,7 @@ export default function UserWebPage() {
     const visitorId = visitorIdRef.current;
     if (!visitorId || !landmarkId) return;
 
-    void fetch("/api/analytics/listens", {
+    void fetch(`${API_BASE}/api/analytics/listens`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ visitorId, landmarkId, language }),
@@ -105,7 +77,7 @@ export default function UserWebPage() {
     const controller = new AbortController();
     async function loadPlaces() {
       try {
-        const response = await fetch("/api/landmarks?lang=vi", { signal: controller.signal });
+        const response = await fetch(`${API_BASE}/api/landmarks?lang=vi`, { signal: controller.signal });
         if (!response.ok) throw new Error("Không tải được địa danh từ PostgreSQL.");
         const result = await response.json();
         if (!Array.isArray(result.data)) throw new Error("API trả về danh sách địa danh không hợp lệ.");
@@ -121,6 +93,7 @@ export default function UserWebPage() {
     void loadPlaces();
     return () => controller.abort();
   }, []);
+
 
   const {
     lang,
@@ -277,7 +250,14 @@ export default function UserWebPage() {
             >
               {lang === "vi" ? "◉ VI" : "◉ EN"}
             </button>
-            <div className="mini-avatar">{"SG"}</div>
+            <Link
+              to="/login"
+              className="mini-avatar"
+              title="Đăng nhập Quản trị viên (Admin)"
+              style={{ textDecoration: "none", cursor: "pointer" }}
+            >
+              {"⚙"}
+            </Link>
           </div>
         </header>
         <main id="sg-web-homePage" className={page === "home" ? "" : "hidden"}>
@@ -438,6 +418,17 @@ export default function UserWebPage() {
                   "Nội dung địa danh được tải từ PostgreSQL; ảnh và audio được phát từ các URL Storage đã lưu trong cơ sở dữ liệu. Bản đồ và lộ trình hiện vẫn là minh họa.",
                 )}
               </p>
+            </div>
+            <div className="settings-card" style={{ borderLeft: "4px solid var(--accent)" }}>
+              <h2>Quản trị hệ thống</h2>
+              <p>Dành riêng cho Quản trị viên (Admin) và Ban quản lý địa danh (Manager) để theo dõi số người dùng, lượt nghe và duyệt nội dung thuyết minh.</p>
+              <Link
+                to="/login"
+                className="outline-btn"
+                style={{ textDecoration: "none", display: "inline-block", marginTop: 8 }}
+              >
+                Đăng nhập Quản trị viên →
+              </Link>
             </div>
           </div>
         </main>

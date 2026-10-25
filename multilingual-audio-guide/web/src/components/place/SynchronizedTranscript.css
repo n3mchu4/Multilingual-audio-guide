@@ -1,0 +1,6 @@
+.sync-transcript .sentences-list { display: grid; gap: 8px; max-height: 420px; overflow-y: auto; }
+.sync-transcript .sentence-item { display: flex; gap: 12px; padding: 12px; cursor: pointer; border-left: 4px solid transparent; border-radius: 8px; }
+.sync-transcript .sentence-item.active { background: #e8f4f2; border-left-color: #167d78; font-weight: 600; }
+.sync-transcript .sentence-item:focus-visible { outline: 2px solid #167d78; }
+.sync-transcript .sentence-text { margin: 0; line-height: 1.7; }
+.sync-transcript .transcript-toolbar { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; }

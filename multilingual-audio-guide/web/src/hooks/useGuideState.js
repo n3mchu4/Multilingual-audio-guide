@@ -10,9 +10,9 @@ export function useGuideState(words, places, onPlaybackStarted) {
   const [currentPlace, setCurrentPlace] = useState(0);
   const scrollRef = useRef(null);
    // audioFile là object { vi: "https://...supabase.co/.../vi.mp3", en: "..." }
-  // Nếu chưa có file của ngôn ngữ đang chọn thì dùng tạm bản tiếng Việt.
+  // Chỉ phát audio của đúng ngôn ngữ đang chọn.
   const audioFile = places[currentPlace]?.audioFile;
-  const audioSrc = audioFile?.[lang] ?? audioFile?.vi ?? "";
+  const audioSrc = audioFile?.[lang] || "";
   const audio = useAudioPlayer(audioSrc, () => onPlaybackStarted?.({
     landmarkId: places[currentPlace]?.id,
     language: lang,

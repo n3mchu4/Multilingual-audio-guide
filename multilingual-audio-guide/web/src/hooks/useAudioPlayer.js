@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 
-export function useAudioPlayer(src, onPlaybackStarted) {
+export function useAudioPlayer(src, onPlay) {
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef(null);
+  const onPlayRef = useRef(onPlay);
+  useEffect(() => { onPlayRef.current = onPlay; }, [onPlay]);
   const [error, setError] = useState('');
+  const [source, setSource] = useState(src);
 
   useEffect(() => {
     // Reset playback state whenever the selected storage URL changes.
@@ -16,6 +19,7 @@ export function useAudioPlayer(src, onPlaybackStarted) {
     setDuration(0);
     setProgress(0);
     setError('');
+    setSource(src);
 
     const audio = new Audio();
     if (src) audio.src = src;
@@ -43,35 +47,51 @@ export function useAudioPlayer(src, onPlaybackStarted) {
 
     audio.addEventListener("loadedmetadata", onLoadedMetadata);
     audio.addEventListener("timeupdate", onTimeUpdate);
+    const onPause = () => setPlaying(false);
+    audio.addEventListener("pause", onPause);
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("error", onError);
 
     // Dọn dẹp khi component unmount hoặc src thay đổi
     return () => {
+      audioRef.current = null;
       audio.pause();
       audio.removeEventListener("loadedmetadata", onLoadedMetadata);
       audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("pause", onPause);
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
     };
   }, [src]);
 
-  const toggle = () => {
+  const play = () => {
+    if (!src || !audioRef.current) return Promise.resolve();
+    setError('');
+    const audio = audioRef.current;
+    return audio.play()
+      .then(() => {
+        if (audioRef.current !== audio) return;
+        setPlaying(true);
+        onPlayRef.current?.();
+      })
+      .catch(() => {
+        if (audioRef.current !== audio) return;
+        setPlaying(false);
+        setError('Không thể tải hoặc phát URL audio đã cấu hình.');
+      });
+  };
+
+  const pause = () => {
     if (!audioRef.current) return;
+    audioRef.current.pause();
+    setPlaying(false);
+  };
+
+  const toggle = () => {
     if (playing) {
-      audioRef.current.pause();
-      setPlaying(false);
+      pause();
     } else {
-      setError('');
-      audioRef.current.play()
-        .then(() => {
-          setPlaying(true);
-          onPlaybackStarted?.();
-        })
-        .catch(() => {
-          setPlaying(false);
-          setError('Không thể tải hoặc phát URL audio đã cấu hình.');
-        });
+      play();
     }
   };
 
@@ -85,21 +105,27 @@ export function useAudioPlayer(src, onPlaybackStarted) {
     setError('');
   };
 
-  const seek = (time) => {
+  const seek = (time, autoPlay = true) => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = time;
     setElapsed(time);
     if (audioRef.current.duration > 0) {
       setProgress((time / audioRef.current.duration) * 100);
     }
+    if (autoPlay && !playing) {
+      play();
+    }
   };
 
+  const matchesSource = source === src;
   return {
-    playing,
-    elapsed,
-    duration,
-    progress,
-    error,
+    playing: matchesSource && playing,
+    elapsed: matchesSource ? elapsed : 0,
+    duration: matchesSource ? duration : 0,
+    progress: matchesSource ? progress : 0,
+    error: matchesSource ? error : '',
+    play,
+    pause,
     toggle,
     reset,
     seek,

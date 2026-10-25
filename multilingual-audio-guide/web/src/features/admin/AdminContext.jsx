@@ -52,6 +52,18 @@ export function AdminProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    const timer = setInterval(async () => {
+      try {
+        const json = await adminRequest('/api/analytics/stats');
+        if (json.data) setAnalytics(json.data);
+      } catch {
+        setAnalytics(previous => previous ? { ...previous, activeUsers: null } : null);
+      }
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     // The refresh applies the result of an asynchronous API request to state.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
@@ -183,12 +195,16 @@ export function AdminProvider({ children }) {
     listens: analytics ? Number(analytics.listens) : null,
     pending: places.filter((place) => place.request).length,
     buses: places.reduce((sum, place) => sum + place.buses.length, 0),
+    activeUsers: analytics?.activeUsers ?? null,
+    totalAudioPlays: analytics?.totalAudioPlays ?? null,
+    playsByLandmark: analytics?.playsByLandmark ?? {},
   };
 
   const value = {
     places,
     accounts,
     activities,
+    analytics,
     stats,
     modal,
     toastMsg,

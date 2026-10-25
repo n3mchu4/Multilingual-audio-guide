@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import SynchronizedTranscript from "../../../components/place/SynchronizedTranscript";
 const imgUrl = (url) => url;
 const time = (seconds) => {
   if (!seconds || isNaN(seconds)) return "00:00";
@@ -137,14 +138,15 @@ export function DetailContent({
       <section className="detail-section">
         <div className="section-head">
           <h2>{tr("transcriptTitle")}</h2>
+          <span className="transcript-hint">◉ {tr("listen")} &amp; {tr("readMore")}</span>
         </div>
-        <div className="transcript">
-          {place.history[lang].split(". ").map((paragraph, index) => (
-            <p key={index}>
-              {paragraph.endsWith(".") ? paragraph : `${paragraph}.`}
-            </p>
-          ))}
-        </div>
+        <SynchronizedTranscript
+          text={place.history?.[lang]}
+          cues={place.transcriptCues?.[lang]}
+          audio={audio}
+          lang={lang}
+          tr={tr}
+        />
       </section>
       <section className="detail-section">
         <div className="section-head">

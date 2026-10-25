@@ -7,12 +7,10 @@ VALUES
  ('independence-palace', 'Dinh Độc Lập', 'Independence Palace', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Dinh Độc Lập. Thay bằng bài thuyết minh của bạn.', 'Sample Independence Palace narration. Replace with your own transcript.'),
  ('notre-dame-cathedral', 'Nhà thờ Đức Bà', 'Notre Dame Cathedral', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Nhà thờ Đức Bà. Thay bằng bài thuyết minh của bạn.', 'Sample Notre Dame Cathedral narration. Replace with your own transcript.'),
  ('central-post-office', 'Bưu điện Trung tâm', 'Central Post Office', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Bưu điện Trung tâm. Thay bằng bài thuyết minh của bạn.', 'Sample Central Post Office narration. Replace with your own transcript.'),
- ( 'bach-dang-wharf', 'Bến Bạch Đằng','Bach Dang Wharf', 'Nội dung mẫu ','Sample content.', 'Sample content for Bach Dang Wharf.'),
- ('saigon-opera-house', 'Nhà hát Thành phố', 'Saigon Opera House', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Nhà hát Thành phố. Thay bằng bài thuyết minh của bạn.', 'Sample Saigon Opera House narration. Replace with your own transcript.')
- ('nguyen-van-binh-book-street',  'Đường Sách Nguyễn Văn Bình',  'Nguyen Van Binh Book Street', 'https://example.com/anh-nen-duong-sach.jpg', 'Nội dung mẫu Đường Sách Nguyễn Văn Bình.', 'Sample content for Nguyen Van Binh Book Street.'
-);)
+ ('bach-dang-wharf', 'Bến Bạch Đằng', 'Bach Dang Wharf', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Bến Bạch Đằng. Thay bằng bài thuyết minh của bạn.', 'Sample Bạch Đằng Wharf narration. Replace with your own transcript.'),
+ ('saigon-opera-house', 'Nhà hát Thành phố', 'Saigon Opera House', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Nhà hát Thành phố. Thay bằng bài thuyết minh của bạn.', 'Sample Saigon Opera House narration. Replace with your own transcript.'),
+ ('nguyen-van-binh-book-street', 'Đường Sách Nguyễn Văn Bình', 'Nguyen Van Binh Book Street', 'Nội dung mẫu.', 'Sample content.', 'Nội dung mẫu Đường Sách Nguyễn Văn Bình. Thay bằng bài thuyết minh của bạn.', 'Sample Nguyen Van Binh Book Street narration. Replace with your own transcript.')
 ON CONFLICT (landmark_id) DO NOTHING;
-COMMIT;
 UPDATE public.landmarks SET
   background_image_url = 'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/ben-thanh-market/ben-thanh-market1.jpeg',
   audio_vi_url = 'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/ben-thanh-market/vi.mp3',
@@ -54,7 +52,7 @@ UPDATE public.landmarks SET
   audio_en_url = 'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/audio/book-street/en.mp3'
 WHERE landmark_id = 'nguyen-van-binh-book-street';
 
-# chia ra phần trên trc r ms phần này nha
+-- chia ra phần trên trc r ms phần này nha
 
 INSERT INTO public.landmark_images (landmark_id, image_url, sort_order) VALUES
   ('ben-thanh-market',     'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/ben-thanh-market/hl1.jpg',  0),
@@ -67,7 +65,7 @@ INSERT INTO public.landmark_images (landmark_id, image_url, sort_order) VALUES
   
 ON CONFLICT (landmark_id, image_url) DO NOTHING;
 
-# phân thêm ảnh nổi bật
+-- phân thêm ảnh nổi bật
 INSERT INTO public.landmark_images (landmark_id, image_url, sort_order) VALUES
   -- 1. Chợ Bến Thành
   ('ben-thanh-market',
@@ -113,7 +111,7 @@ INSERT INTO public.landmark_images (landmark_id, image_url, sort_order) VALUES
    'https://pckzgrgjqydmflamelau.supabase.co/storage/v1/object/public/image/book-street/hl3.jpg', 1)
 ON CONFLICT (landmark_id, image_url) DO NOTHING;
 
-#  nd thuyết minh 
+-- Nội dung thuyết minh
 -- 1. Bến Bạch Đằng
 UPDATE public.landmarks
 SET 
@@ -259,7 +257,7 @@ Over more than a century, the Saigon Opera House has fulfilled diverse historica
 
 Today, the Opera House regularly hosts diverse artistic performances ranging from symphonies, operas, and ballets to traditional Vietnamese cultural shows. Situated at the junction of Saigon''s most elegant avenues, it serves as both a cultural institution and an enduring architectural milestone of the city.'
 WHERE landmark_id = 'saigon-opera-house';
-# mô tả ngắn
+-- mô tả ngắn
 -- 1. Chợ Bến Thành
 UPDATE public.landmarks SET description_vi = 'Biểu tượng thương mại lâu đời nhất Sài Gòn với tháp đồng hồ cửa Nam nổi tiếng, nơi giao thương sầm uất của các mặt hàng đặc sản, vải vóc và thủ công mỹ nghệ.', description_en = 'Saigon''s oldest commercial symbol famous for its South Gate clock tower, bustling with local specialties, fabrics, and handicrafts.' WHERE landmark_id = 'ben-thanh-market';
 
@@ -280,3 +278,4 @@ UPDATE public.landmarks SET description_vi = 'Công viên bờ kè ven sông Sà
 
 -- 7. Đường Sách Nguyễn Văn Bình
 UPDATE public.landmarks SET description_vi = 'Không gian văn hóa độc đáo giữa trung tâm thành phố, nơi hội tụ các gian hàng sách, cà phê và thường xuyên tổ chức các sự kiện giao lưu tác giả.', description_en = 'A unique cultural space in the city center, gathering book stalls, cafes, and regularly hosting author meet-and-greet events.' WHERE landmark_id = 'nguyen-van-binh-book-street';
+COMMIT;

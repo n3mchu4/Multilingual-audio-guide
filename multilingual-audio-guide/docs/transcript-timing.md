@@ -112,8 +112,10 @@ Tính lại sau tua, đổi ngôn ngữ hoặc đổi địa danh; chỉ dùng t
 rỗng trả `-1`, bỏ đánh dấu. Hàm dùng chung có sẵn ở
 `shared/utils/transcriptTiming.js`: `findActiveTranscriptCue`.
 
-Phần bổ sung này cung cấp dữ liệu và hàm tìm câu. Giao diện tô sáng/nhấn câu
-để tua chưa được thêm. Chưa có bộ timing đã căn audio thật đi kèm.
+Web (trang khách và `/places/:id`) cùng mobile đã dùng các mốc này để tô sáng
+và nhấn câu để tua. Khi chưa có mốc hợp lệ, giao diện có thể ước lượng theo
+thời lượng audio thật và ghi rõ trạng thái ước lượng. Chưa có bộ timing đã
+căn audio thật đi kèm. Xem [hướng dẫn chạy bản sửa](admin-and-transcript-fixes.md).
 
 ## Kiểm tra
 

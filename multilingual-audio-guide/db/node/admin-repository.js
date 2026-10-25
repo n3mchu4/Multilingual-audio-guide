@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { pool, query } from './database.js';
+import { getAnalyticsData } from './analytics-service.js';
 
 const formatDate = (value) =>
   new Date(value).toLocaleDateString('vi-VN', {
@@ -27,7 +28,7 @@ function mapVersion(row, prefix = '') {
 }
 
 export async function getAdminBootstrap() {
-  const [landmarksResult, imagesResult, busesResult, proposalsResult, proposalImagesResult, usersResult, logsResult, analyticsResult] =
+  const [landmarksResult, imagesResult, busesResult, proposalsResult, proposalImagesResult, usersResult, logsResult] =
     await Promise.all([
       query('SELECT * FROM public.landmarks ORDER BY landmark_id'),
       query('SELECT landmark_id, image_url FROM public.landmark_images ORDER BY sort_order, image_id'),
@@ -51,9 +52,6 @@ export async function getAdminBootstrap() {
         ORDER BY u.created_at, u.username`),
       query(`SELECT action_type, description, created_at
         FROM public.activity_logs ORDER BY created_at DESC LIMIT 100`),
-      query(`SELECT
-        (SELECT COUNT(*)::int FROM public.analytics_visitors) AS visitors,
-        (SELECT COUNT(*)::int FROM public.audio_listens) AS listens`),
     ]);
 
   const imagesByLandmark = new Map();
@@ -136,10 +134,7 @@ export async function getAdminBootstrap() {
     places,
     accounts,
     activities,
-    analytics: {
-      visitors: analyticsResult.rows[0].visitors,
-      listens: analyticsResult.rows[0].listens,
-    },
+    analytics: await getAnalyticsData(),
   };
 }
 
