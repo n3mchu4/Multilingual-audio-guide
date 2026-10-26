@@ -3,7 +3,22 @@ import { query } from './database.js';
 import { createPresenceTracker } from '../../shared/utils/presence.js';
 
 const presence = createPresenceTracker();
-export const recordPing = (input) => presence.ping(input);
+export async function recordPing({ sessionId, visitorId, platform, active }) {
+  // Persist session history before updating the in-memory live counter.
+  if (active) {
+    await query(`INSERT INTO public.device_sessions
+      (session_id, visitor_id, platform, started_at, last_seen_at, ended_at)
+      VALUES ($1, $2, $3, now(), now(), NULL)
+      ON CONFLICT (session_id) DO UPDATE
+      SET last_seen_at = now(), ended_at = NULL`,
+    [sessionId, visitorId, platform]);
+  } else {
+    await query(`UPDATE public.device_sessions
+      SET ended_at = COALESCE(ended_at, now())
+      WHERE session_id = $1`, [sessionId]);
+  }
+  return presence.ping({ sessionId, visitorId, active });
+}
 
 // Both /play and /listens persist to audio_listens; dashboard totals share one source.
 export async function recordAudioPlay({ landmarkId, lang = 'vi', visitorId = randomUUID() }) {

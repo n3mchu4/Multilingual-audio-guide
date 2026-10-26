@@ -10,6 +10,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON
 GRANT SELECT, INSERT ON public.activity_logs TO guide_app;
 GRANT SELECT, INSERT, UPDATE ON public.analytics_visitors TO guide_app;
 GRANT SELECT, INSERT ON public.audio_listens TO guide_app;
+GRANT SELECT, INSERT, UPDATE ON public.device_sessions TO guide_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO guide_app;
 REVOKE ALL ON FUNCTION public.review_proposal(uuid,uuid,boolean,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.review_proposal(uuid,uuid,boolean,text) TO guide_app;
