@@ -57,7 +57,7 @@ export default function Dashboard() {
             <div className="stat-icon" style={{ background: '#edf8f2', color: '#21835e' }}>👥</div>
             <span className="status live" style={{ animation: 'pulse 2s infinite' }}>● Trực tiếp</span>
           </div>
-          <strong>{stats.activeUsers  ?? '—'}</strong>
+          <strong>{stats.activeUsers ?? '—'}</strong>
           <span className="label"></span>
         </div>
 

@@ -4,6 +4,7 @@ import { createPresenceTracker } from '../../shared/utils/presence.js';
 
 const presence = createPresenceTracker();
 export async function recordPing({ sessionId, visitorId, platform, active }) {
+  console.log('PING RECEIVED:', { sessionId, visitorId, platform, active });
   // Persist session history before updating the in-memory live counter.
   if (active) {
     await query(`INSERT INTO public.device_sessions
@@ -16,6 +17,7 @@ export async function recordPing({ sessionId, visitorId, platform, active }) {
     await query(`UPDATE public.device_sessions
       SET ended_at = COALESCE(ended_at, now())
       WHERE session_id = $1`, [sessionId]);
+      console.log('DEVICE SAVED TO DATABASE');
   }
   return presence.ping({ sessionId, visitorId, active });
 }
