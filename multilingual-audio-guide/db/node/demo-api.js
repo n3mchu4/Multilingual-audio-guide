@@ -132,7 +132,7 @@ const server=http.createServer(async (req,res)=>{
           || typeof body?.active !== 'boolean') {
         sendJson(res,400,{error:'Valid sessionId, visitorId, platform and active are required'});return;
       }
-      sendJson(res,200,{ok:true,activeUsers:recordPing(body)});return;
+      sendJson(res,200,{ok:true,activeUsers:await recordPing(body)});return;
     }
     if (req.method==='POST' && url.pathname==='/api/analytics/play') {
       const body = await readJson(req);
