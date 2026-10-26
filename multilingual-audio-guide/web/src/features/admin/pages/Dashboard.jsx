@@ -57,8 +57,8 @@ export default function Dashboard() {
             <div className="stat-icon" style={{ background: '#edf8f2', color: '#21835e' }}>👥</div>
             <span className="status live" style={{ animation: 'pulse 2s infinite' }}>● Trực tiếp</span>
           </div>
-          <strong>{stats.activeUsers ?? '—'}</strong>
-          <span className="label">Thiết bị đang hoạt động (120 giây)</span>
+          <strong>{stats.activeUsers  ?? '—'}</strong>
+          <span className="label"></span>
         </div>
 
         <div className="stat" style={{ borderLeft: '4px solid #d63384' }}>

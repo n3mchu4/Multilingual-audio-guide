@@ -1,5 +1,5 @@
 // One tracker per API process. A session expires after two minutes without a ping.
-export function createPresenceTracker(now = Date.now, timeout = 120_000) {
+export function createPresenceTracker(now = Date.now, timeout = 10_000) {
   const sessions = new Map();
   const count = () => {
     for (const [id, session] of sessions) {
@@ -18,7 +18,7 @@ export function createPresenceTracker(now = Date.now, timeout = 120_000) {
 }
 
 // Timer and lifecycle adapters make the same heartbeat work on web and native.
-export function startPresence({ send, isActive, subscribe, interval = 30_000 }) {
+export function startPresence({ send, isActive, subscribe, interval = 5_000 }) {
   let stopped = false;
   const ping = () => { if (!stopped) send(isActive()); };
   ping();
