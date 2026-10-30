@@ -96,7 +96,6 @@ export default function App() {
   const [playingPlaceIndex, setPlayingPlaceIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [navigating, setNavigating] = useState(false);
-  const [busVisible, setBusVisible] = useState(false);
   const [destinationOpen, setDestinationOpen] = useState(false);
   const scroll = useRef(null);
   const tr = (key, fallback = key) =>
@@ -429,14 +428,12 @@ const setLanguage = (next) => {
     if (!userLoc && locStatus !== "denied" && locStatus !== "loading") void requestLocation();
     setSelected(index);
     setNavigating(false);
-    setBusVisible(false);
     setDestinationOpen(false);
   };
 
   const closePanel = () => {
     setSelected(null);
     setNavigating(false);
-    setBusVisible(false);
   };
 
 // M09: tạo phiên khi nghe nội dung mới; giữ phiên khi tạm dừng/phát tiếp.
@@ -700,26 +697,15 @@ const playAudio = async (targetIndex, start = null) => {
                     : (lang === "vi" ? "Vị trí của tôi" : "My location")}
                 </Text>
               </Pressable>
-              <Pressable
-                style={styles.secondarySmall}
-                onPress={() => setBusVisible((value) => !value)}
-              >
-                <Text style={styles.pinkText}>🚌 {tr("busConnect")}</Text>
-              </Pressable>
+              
               {navigating && (
                 <Pressable style={styles.secondarySmall} onPress={closePanel}>
                   <Text style={styles.pinkText}>✕ {tr("exitNav")}</Text>
                 </Pressable>
               )}
             </View>
-            {busVisible && (
-              <Text style={styles.busInfo}>
-                🚌 {lang === "vi" ? "Tuyến minh họa" : "Illustrative bus lines"}
-                : {placesList[selected]?.bus}
-              </Text>
-            )}
-          </View>
-        )}
+            </View>
+   )}
       </View>
       <Text style={[styles.eyebrow, { margin: 16 }]}>DANH SÁCH KHÁM PHÁ</Text>
       {placesList.map((p, i) => (
@@ -1138,14 +1124,7 @@ const styles = StyleSheet.create({
   secondarySmall: { padding: 10, backgroundColor: C.soft, borderRadius: 10 },
   whiteText: { color: "#fff", fontSize: 12, fontWeight: "800" },
   pinkText: { color: C.pink, fontSize: 12, fontWeight: "800" },
-  busInfo: {
-    marginTop: 12,
-    padding: 10,
-    backgroundColor: C.soft,
-    color: C.ink,
-    fontSize: 12,
-    lineHeight: 18,
-  },
+  
   placeCard: {
     backgroundColor: "#fff",
     marginHorizontal: 14,

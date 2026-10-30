@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-
 // Kiểm tra địa danh có tọa độ hợp lệ để hiển thị trên bản đồ.
 function hasCoordinates(place) {
   return (
@@ -25,6 +24,7 @@ export default function NavigationMap({
   const mapRef = useRef(null);
   const selectedPlace = placesList[selected];
   const vi = lang === 'vi';
+  
 
   // Di chuyển bản đồ đến vị trí người dùng sau khi lấy được GPS.
   useEffect(() => {
@@ -92,6 +92,7 @@ export default function NavigationMap({
       </MapView>
 
       <View style={styles.controls}>
+
         <Pressable
           style={styles.button}
           onPress={onMyLocation}

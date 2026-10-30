@@ -47,7 +47,6 @@ export const fetchPlacesFromAPI = async () => {
     lat: item.latitude != null ? Number(item.latitude) : FALLBACK_COORDS[item.id]?.lat ?? null,
     lng: item.longitude != null ? Number(item.longitude) : FALLBACK_COORDS[item.id]?.lng ?? null,
     time: "5–7 phút",
-    bus: "",
     dist: "",
   }));
 };
@@ -66,7 +65,6 @@ export const words = {
     homeTitle: "Bản đồ Định vị",
     homeSubtitle: "Dữ liệu địa danh từ PostgreSQL Backend.",
     startNav: "Bắt đầu",
-    busConnect: "Xe buýt",
     exitNav: "Thoát",
     backHome: "Danh sách",
     audioTitle: "Thuyết minh audio",
@@ -94,7 +92,6 @@ export const words = {
     homeTitle: "GPS Map Navigation",
     homeSubtitle: "Landmarks data loaded from PostgreSQL Backend.",
     startNav: "Start",
-    busConnect: "Buses",
     exitNav: "Exit",
     backHome: "All Places",
     audioTitle: "Audio guide",
