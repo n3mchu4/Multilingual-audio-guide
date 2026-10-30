@@ -2,7 +2,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS public.device_sessions (
   session_id text PRIMARY KEY,
   visitor_id text NOT NULL,
-  platform text NOT NULL CHECK (platform IN ('web', 'mobile')),
+  platform text NOT NULL CHECK (platform IN ('web', 'mobile', 'android', 'ios')),
   started_at timestamptz NOT NULL DEFAULT now(),
   last_seen_at timestamptz NOT NULL DEFAULT now(),
   ended_at timestamptz

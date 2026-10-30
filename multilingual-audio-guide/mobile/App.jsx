@@ -29,6 +29,12 @@ import {
 
 import { createVisitorId } from '../shared/utils/visitorId.js';
 import { startPresence } from '../shared/utils/presence.js';
+
+import { createListeningSession } from '../shared/utils/listeningSession.js';
+import {
+  flushListening,
+  getVisitorId,
+} from './services/listeningAnalytics';
 const mobileSessionId = createVisitorId();
 
 const C = {
@@ -309,7 +315,14 @@ export default function App() {
   const status = useAudioPlayerStatus(player);
   const sourceRef = useRef('');
   const pendingRef = useRef(null);
-  const analyticsRef = useRef(null);
+
+// giữ phiên nghe hiện tại và mốc thời gian đã gửi lên backend.
+const listeningRef = useRef(null);
+const lastSentRef = useRef(-1);
+
+// Ngăn thao tác phát cũ tiếp tục khi đã chuyển nội dung.
+const playbackEpoch = useRef(0);
+  
   const [audioError, setAudioError] = useState('');
   const [audioLoading, setAudioLoading] = useState(false); // M06: đang tải audio
   const [audioEnded, setAudioEnded] = useState(false);     // M06: đã phát xong
@@ -323,30 +336,121 @@ export default function App() {
   const transcriptText = place.history?.[lang] || '';
   const transcriptParagraphs = transcriptText.split(/\n+/).filter(Boolean);
 
-  // Wait for the replacement source to load before seeking or starting playback.
-  useEffect(() => {
-    const subscription = player.addListener('playbackStatusUpdate', async next => {
-      if (next.isLoaded) { clearLoadTimer(); setAudioLoading(false); }
-      if (next.didJustFinish) setAudioEnded(true);
-      if (next.playing && analyticsRef.current) {
-        const event = analyticsRef.current;
-        analyticsRef.current = null;
-        void fetch(`${API_BASE_URL}/api/analytics/play`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ visitorId: mobileSessionId, ...event }),
-        }).catch(() => {});
+  // theo dõi player, cập nhật thời gian nghe và gửi thống kê theo phiên.
+useEffect(() => {
+  const subscription = player.addListener(
+    'playbackStatusUpdate',
+    async (next) => {
+      if (next.isLoaded) {
+        clearLoadTimer();
+        setAudioLoading(false);
       }
+
+      if (next.didJustFinish) {
+        setAudioEnded(true);
+      }
+
+      if (listeningRef.current) {
+        const event = listeningRef.current.update(next);
+
+        const firstPlayback =
+          next.playing && lastSentRef.current === -1;
+
+        const shouldSendUpdate =
+          event.listenedSeconds !== lastSentRef.current &&
+          (
+            next.didJustFinish ||
+            !next.playing ||
+            event.listenedSeconds - lastSentRef.current >= 10
+          );
+
+        if (firstPlayback || shouldSendUpdate) {
+          lastSentRef.current = event.listenedSeconds;
+          void flushListening(event);
+        }
+      }
+
       const request = pendingRef.current;
+
       if (!request || !next.isLoaded) return;
+
       pendingRef.current = null;
+
       try {
-        if (request.start > 0) await player.seekTo(request.start);
+        if (request.start > 0) {
+          await player.seekTo(request.start);
+        }
+
         if (sourceRef.current !== request.src) return;
+
+        if (
+          request.epoch != null &&
+          request.epoch !== playbackEpoch.current
+        ) {
+          return;
+        }
+
         player.play();
-      } catch { setAudioError('Không thể phát đoạn audio đã chọn.'); }
-    });
-    return () => subscription.remove();
-  }, [player]);
+      } catch {
+        setAudioError(
+          'Không thể phát audio. / Unable to play audio.'
+        );
+      }
+    }
+  );
+
+  return () => subscription.remove();
+}, [player]);
+
+// Lưu phiên và dừng audio khi app xuống nền; gửi lại dữ liệu khi mở app.
+useEffect(() => {
+  void flushListening();
+
+  const subscription = AppState.addEventListener(
+    'change',
+    (state) => {
+      if (state === 'active') {
+        void flushListening();
+        return;
+      }
+
+      playbackEpoch.current += 1;
+      pendingRef.current = null;
+
+      clearLoadTimer();
+      setAudioLoading(false);
+      player.pause();
+
+      if (listeningRef.current) {
+        void flushListening(
+          listeningRef.current.update({ playing: false })
+        );
+      }
+    }
+  );
+
+  return () => {
+    subscription.remove();
+    clearLoadTimer();
+
+    if (listeningRef.current) {
+      void flushListening(
+        listeningRef.current.update({ playing: false })
+      );
+    }
+  };
+}, [player]);
+
+// Thử gửi lại thống kê còn lưu trên điện thoại khi app đang mở.
+useEffect(() => {
+  const timer = setInterval(() => {
+    if (AppState.currentState === 'active') {
+      void flushListening();
+    }
+  }, 15000);
+
+  return () => clearInterval(timer);
+}, []);
 
   if (placesLoading || placesError || placesList.length === 0) {
     return (
@@ -388,17 +492,33 @@ export default function App() {
     showPage("detail");
   };
 
-  const setLanguage = (next) => {
-    pendingRef.current = null;
-    analyticsRef.current = null;
-    sourceRef.current = '';
-    player.pause();
-    setAudioLoading(false);
-    setAudioEnded(false);
-    clearLoadTimer();
-    setLang(next);
-    AsyncStorage.setItem("guideLang", next).catch(() => {});
-  };
+  // Đổi ngôn ngữ: lưu phiên nghe cũ và dừng audio trước khi đổi.
+const setLanguage = (next) => {
+  pendingRef.current = null;
+  playbackEpoch.current += 1;
+
+  player.pause();
+
+  if (listeningRef.current) {
+    void flushListening(
+      listeningRef.current.update({ playing: false })
+    );
+  }
+
+  listeningRef.current = null;
+  lastSentRef.current = -1;
+  sourceRef.current = '';
+
+  clearLoadTimer();
+  player.replace(null);
+
+  setAudioLoading(false);
+  setAudioEnded(false);
+  setAudioError('');
+  setLang(next);
+
+  AsyncStorage.setItem('guideLang', next).catch(() => {});
+};
 
   // GPS: xin quyền và lấy vị trí hiện tại của người dùng.
   const requestLocation = async () => {
@@ -469,42 +589,124 @@ export default function App() {
     setBusVisible(false);
   };
 
-  const playAudio = async (targetIndex, start = null) => {
-    const targetPlace = placesList[targetIndex];
-    const src = targetPlace?.audioUrl?.[lang];
-    if (!src) { setAudioError('Chưa có audio cho ngôn ngữ đang chọn.'); return; }
-    setAudioError('');
-    setAudioEnded(false);
-    analyticsRef.current = { landmarkId: targetPlace.id, lang };
-    setPlayingPlaceIndex(targetIndex);
-    setPlayingLanguage(lang);
-    try {
-      if (sourceRef.current !== src) {
-        player.pause();
-        sourceRef.current = src;
-        pendingRef.current = { src, start: start ?? 0 };
-        setAudioLoading(true);
-        clearLoadTimer();
-        loadTimer.current = setTimeout(() => {
-          // M10: quá 15 giây không tải được audio thì báo lỗi, cho thử lại.
-          setAudioLoading(false);
-          pendingRef.current = null;
-          sourceRef.current = '';
-          player.pause();
-          setAudioError(lang === 'vi'
-            ? 'Không tải được audio. Kiểm tra mạng rồi bấm phát lại.'
-            : 'Could not load audio. Check your network and tap play again.');
-        }, 15000);
-        player.replace(src);
-      } else {
-        if (start != null || player.currentTime >= player.duration) await player.seekTo(start ?? 0);
-        player.play();
-      }
-    } catch {
-      setAudioLoading(false);
-      setAudioError(lang === 'vi' ? 'Không thể phát audio.' : 'Unable to play audio.');
+// M09: tạo phiên khi nghe nội dung mới; giữ phiên khi tạm dừng/phát tiếp.
+const playAudio = async (targetIndex, start = null) => {
+  const targetPlace = placesList[targetIndex];
+  const src = targetPlace?.audioUrl?.[lang];
+
+  if (!src) {
+    setAudioError(
+      lang === 'vi'
+        ? 'Chưa có audio cho ngôn ngữ đang chọn.'
+        : 'No audio for this language.'
+    );
+    return;
+  }
+
+  const ended = audioEnded;
+  const epoch = ++playbackEpoch.current;
+
+  setAudioError('');
+  setAudioEnded(false);
+
+  const newSession =
+    sourceRef.current !== src ||
+    playingPlaceIndex !== targetIndex ||
+    playingLanguage !== lang ||
+    ended ||
+    !listeningRef.current;
+
+  if (newSession) {
+    pendingRef.current = null;
+    player.pause();
+
+    if (listeningRef.current) {
+      const event = listeningRef.current.update({
+        playing: false,
+      });
+
+      void flushListening(event);
     }
-  };
+
+    listeningRef.current = null;
+
+    const visitorId = await getVisitorId();
+
+    if (epoch !== playbackEpoch.current) return;
+
+    listeningRef.current = createListeningSession({
+      landmarkId: targetPlace.id,
+      lang,
+      visitorId,
+      platform: Platform.OS === 'ios' ? 'ios' : 'android',
+    });
+
+    lastSentRef.current = -1;
+  }
+
+  setPlayingPlaceIndex(targetIndex);
+  setPlayingLanguage(lang);
+
+  try {
+    if (sourceRef.current !== src) {
+      player.pause();
+
+      sourceRef.current = src;
+      pendingRef.current = {
+        src,
+        start: start ?? 0,
+        epoch,
+      };
+
+      setAudioLoading(true);
+      clearLoadTimer();
+
+      loadTimer.current = setTimeout(() => {
+        if (epoch !== playbackEpoch.current) return;
+
+        setAudioLoading(false);
+        pendingRef.current = null;
+        sourceRef.current = '';
+
+        player.pause();
+
+        setAudioError(
+          lang === 'vi'
+            ? 'Không tải được audio. Kiểm tra mạng rồi bấm phát lại.'
+            : 'Could not load audio. Check your network and try again.'
+        );
+      }, 15000);
+
+      player.replace(null);
+      player.replace(src);
+    } else {
+      if (
+        start != null ||
+        ended ||
+        player.currentTime >= player.duration
+      ) {
+        await player.seekTo(start ?? 0);
+      }
+
+      if (epoch !== playbackEpoch.current) return;
+
+      player.play();
+    }
+  } catch {
+    clearLoadTimer();
+    pendingRef.current = null;
+    sourceRef.current = '';
+
+    player.pause();
+    setAudioLoading(false);
+
+    setAudioError(
+      lang === 'vi'
+        ? 'Không thể phát audio.'
+        : 'Unable to play audio.'
+    );
+  }
+};
   // M05: chạm vào thanh tiến trình để tua
   const seekToRatio = async (ratio) => {
     if (!matchesSelection || !status.duration) return;

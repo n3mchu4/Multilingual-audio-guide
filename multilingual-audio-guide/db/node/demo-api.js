@@ -24,7 +24,12 @@ import {
 import { createTokenService } from '../../functions/src/services/tokenService.js';
 import { AUTH_ERROR_CODES } from '../../shared/constants/auth.js';
 import { getFeaturesForUserType, USER_TYPES } from '../../shared/constants/roles.js';
-import { recordPing, recordAudioPlay, getAnalyticsData } from './analytics-service.js';
+import {
+  recordPing,
+  recordAudioPlay,
+  recordListeningSession,
+  getAnalyticsData,
+} from './analytics-service.js';
 const port=Number(process.env.DB_API_PORT ?? 3002);
 if (!Number.isInteger(port) || port<1 || port>65535) throw new Error('Invalid DB_API_PORT');
 const allowedOrigin=process.env.DB_API_CORS_ORIGIN ?? 'http://localhost:5173';
@@ -134,16 +139,68 @@ const server=http.createServer(async (req,res)=>{
       }
       sendJson(res,200,{ok:true,activeUsers:await recordPing(body)});return;
     }
-    if (req.method==='POST' && url.pathname==='/api/analytics/play') {
-      const body = await readJson(req);
-      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(body?.landmarkId ?? '')
-          || !['vi','en'].includes(body?.lang)
-          || (body?.visitorId != null && !uuidPattern.test(body.visitorId))) {
-        sendJson(res,400,{error:'Valid landmarkId and lang are required'});return;
-      }
-      const saved = await recordAudioPlay(body);
-      sendJson(res,saved ? 201 : 404,saved ? {ok:true} : {error:'Landmark not found'});return;
-    }
+    // kiểm tra dữ liệu và lưu phiên nghe; vẫn hỗ trợ cách gửi lượt nghe cũ.
+if (
+  req.method === 'POST' &&
+  url.pathname === '/api/analytics/play'
+) {
+  const body = await readJson(req);
+
+  if (
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(body?.landmarkId ?? '') ||
+    !['vi', 'en'].includes(body?.lang) ||
+    (
+      body?.visitorId != null &&
+      !uuidPattern.test(body.visitorId)
+    )
+  ) {
+    sendJson(res, 400, {
+      error: 'Valid landmarkId and lang are required',
+    });
+    return;
+  }
+
+  if (
+    body.listenSessionId != null &&
+    (
+      !uuidPattern.test(body.listenSessionId) ||
+      !uuidPattern.test(body.visitorId || '') ||
+      !['web', 'mobile', 'android', 'ios'].includes(body.platform) ||
+      !Number.isFinite(body.listenedSeconds) ||
+      body.listenedSeconds < 0 ||
+      body.listenedSeconds > 86400 ||
+      !Number.isFinite(body.durationSeconds) ||
+      body.durationSeconds < 0 ||
+      body.durationSeconds > 86400 ||
+      typeof body.completed !== 'boolean' ||
+      (
+        body.completed &&
+        !(
+          body.durationSeconds > 0 &&
+          body.listenedSeconds >= body.durationSeconds * 0.9
+        )
+      )
+    )
+  ) {
+    sendJson(res, 400, {
+      error: 'Invalid listening session snapshot',
+    });
+    return;
+  }
+
+  const saved = body.listenSessionId != null
+    ? await recordListeningSession(body)
+    : await recordAudioPlay(body);
+
+  sendJson(
+    res,
+    saved ? 201 : 404,
+    saved
+      ? { ok: true }
+      : { error: 'Landmark not found or session mismatch' }
+  );
+  return;
+}
     if (req.method==='GET' && url.pathname==='/api/analytics/stats') {
       if (!await authenticatedAdmin(req)) {sendJson(res,401,{error:'Admin authentication required'});return;}
       sendJson(res,200,{data:await getAnalyticsData()});return;
