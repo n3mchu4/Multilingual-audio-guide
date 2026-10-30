@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   AppState,
   Image,
   ImageBackground,
   Linking,
-  PanResponder,
   Platform,
   Pressable,
   SafeAreaView,
@@ -18,11 +17,10 @@ import {
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
+import NavigationMap from './components/NavigationMap';
 import { errorMessage } from "./services/apiClient";
 import {
   words,
-  mapPoints,
-  userGps,
   fetchPlacesFromAPI,
   API_BASE_URL,
 } from "./services/mobileData";
@@ -51,7 +49,6 @@ const photo = (url) => {
   return { uri: url };
 };
 
-const limit = (value) => Math.min(2.8, Math.max(0.7, value));
 
 // Khoảng cách đường chim bay (km) giữa hai toạ độ.
 const haversineKm = (a, b) => {
@@ -71,21 +68,6 @@ const formatTime = (millis) => {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 };
 
-const touchPoint = (event) => {
-  const touches = event.nativeEvent.touches;
-  if (!touches.length) return null;
-  if (touches.length === 1)
-    return { x: touches[0].pageX, y: touches[0].pageY, count: 1 };
-  const [a, b] = touches;
-  return {
-    x: (a.pageX + b.pageX) / 2,
-    y: (a.pageY + b.pageY) / 2,
-    distance: Math.hypot(b.pageX - a.pageX, b.pageY - a.pageY),
-    angle: Math.atan2(b.pageY - a.pageY, b.pageX - a.pageX),
-    count: 2,
-  };
-};
-
 function Choice({ children, selected, onPress, style }) {
   return (
     <Pressable
@@ -96,136 +78,6 @@ function Choice({ children, selected, onPress, style }) {
         {children}
       </Text>
     </Pressable>
-  );
-}
-
-function MapArea({
-  placesList,
-  lang,
-  selected,
-  onSelect,
-  navigating,
-  view,
-  onChangeView,
-}) {
-  const previous = useRef(null);
-  const panResponder = useMemo(
-    () =>
-      // PanResponder retains gesture state internally via refs.
-      // eslint-disable-next-line react-hooks/refs
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => false,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: (event) => {
-          previous.current = touchPoint(event);
-        },
-        onPanResponderMove: (event) => {
-          const next = touchPoint(event),
-            last = previous.current;
-          if (!next) return;
-          if (last && last.count === next.count) {
-            onChangeView((old) => ({
-              x: old.x + next.x - last.x,
-              y: old.y + next.y - last.y,
-              scale:
-                last.distance && next.distance
-                  ? limit((old.scale * next.distance) / last.distance)
-                  : old.scale,
-              rotation:
-                last.count > 1
-                  ? old.rotation + ((next.angle - last.angle) * 180) / Math.PI
-                  : old.rotation,
-            }));
-          }
-          previous.current = next;
-        },
-        onPanResponderRelease: () => {
-          previous.current = null;
-        },
-        onPanResponderTerminate: () => {
-          previous.current = null;
-        },
-      }),
-    [onChangeView]
-  );
-
-  const target = selected == null ? null : mapPoints[selected % mapPoints.length];
-  const line =
-    target && navigating
-      ? [
-          {
-            left: `${Math.min(userGps.x, target.x)}%`,
-            top: `${target.y}%`,
-            width: `${Math.abs(target.x - userGps.x)}%`,
-            height: 4,
-          },
-          {
-            left: `${userGps.x}%`,
-            top: `${Math.min(userGps.y, target.y)}%`,
-            width: 4,
-            height: `${Math.abs(target.y - userGps.y)}%`,
-          },
-        ]
-      : [];
-
-  return (
-    <View style={styles.mapViewport} {...panResponder.panHandlers}>
-      <View
-        style={[
-          styles.mapLayer,
-          {
-            transform: [
-              { translateX: view.x },
-              { translateY: view.y },
-              { scale: view.scale },
-              { rotate: `${view.rotation}deg` },
-            ],
-          },
-        ]}
-      >
-        <View style={[styles.mapRiver, { transform: [{ rotate: "18deg" }] }]} />
-        {[
-          { x: -55, y: 22, r: 26 },
-          { x: -50, y: 66, r: -20 },
-          { x: 45, y: 2, r: 55 },
-          { x: 25, y: 45, r: -65 },
-        ].map((road, i) => (
-          <View
-            key={i}
-            style={[
-              styles.mapRoad,
-              {
-                left: `${road.x}%`,
-                top: `${road.y}%`,
-                transform: [{ rotate: `${road.r}deg` }],
-              },
-            ]}
-          />
-        ))}
-        {line.map((position, i) => (
-          <View key={i} style={[styles.routeLine, position]} />
-        ))}
-        {placesList.map((place, i) => {
-          const pt = mapPoints[i % mapPoints.length];
-          return (
-            <Pressable
-              key={place.id || i}
-              onPress={() => onSelect(i)}
-              style={[
-                styles.mapPin,
-                { left: `${pt.x}%`, top: `${pt.y}%` },
-                selected === i && styles.mapPinSelected,
-              ]}
-            >
-              <View style={styles.pinDot} />
-              <Text style={styles.mapPinText} numberOfLines={1}>
-                {place.name[lang]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
   );
 }
 
@@ -246,8 +98,6 @@ export default function App() {
   const [navigating, setNavigating] = useState(false);
   const [busVisible, setBusVisible] = useState(false);
   const [destinationOpen, setDestinationOpen] = useState(false);
-  const [mapView, setMapView] = useState({ x: 0, y: 0, scale: 1, rotation: 0 });
-
   const scroll = useRef(null);
   const tr = (key, fallback = key) =>
     words[lang]?.[key] ?? words.vi?.[key] ?? fallback;
@@ -777,14 +627,8 @@ const playAudio = async (targetIndex, start = null) => {
   const home = (
     <>
       <View style={styles.pageHeading}>
-        <Text style={styles.eyebrow}>
-          {lang === "vi"
-            ? "BẢN ĐỒ MINH HỌA · QUẬN 1"
-            : "ILLUSTRATIVE MAP · DISTRICT 1"}
-        </Text>
-        <Text style={styles.title}>{tr("homeTitle")}</Text>
-        <Text style={styles.paragraph}>{tr("homeSubtitle")}</Text>
-      </View>
+  <Text style={styles.title}>{tr("homeTitle")}</Text>
+</View>
       <View style={styles.mapCard}>
         <Pressable
           accessibilityRole="button"
@@ -814,47 +658,16 @@ const playAudio = async (targetIndex, start = null) => {
             ))}
           </ScrollView>
         )}
-        <MapArea
-          placesList={placesList}
-          lang={lang}
-          selected={selected}
-          onSelect={choosePin}
-          navigating={navigating}
-          view={mapView}
-          onChangeView={setMapView}
-        />
-        <View style={styles.mapControls}>
-          <Pressable
-            style={styles.mapButton}
-            onPress={() =>
-              setMapView((v) => ({ ...v, scale: limit(v.scale + 0.2) }))
-            }
-          >
-            <Text style={styles.controlText}>+</Text>
-          </Pressable>
-          <Pressable
-            style={styles.mapButton}
-            onPress={() =>
-              setMapView((v) => ({ ...v, scale: limit(v.scale - 0.2) }))
-            }
-          >
-            <Text style={styles.controlText}>−</Text>
-          </Pressable>
-          <Pressable
-            style={styles.mapButton}
-            onPress={() =>
-              setMapView((v) => ({ ...v, rotation: v.rotation + 45 }))
-            }
-          >
-            <Text style={styles.controlText}>↺</Text>
-          </Pressable>
-          <Pressable
-            style={styles.mapButton}
-            onPress={() => setMapView({ x: 0, y: 0, scale: 1, rotation: 0 })}
-          >
-            <Text style={styles.controlText}>⌖</Text>
-          </Pressable>
-        </View>
+        <NavigationMap
+  placesList={placesList}
+  lang={lang}
+  selected={selected}
+  onSelect={choosePin}
+  userLoc={userLoc}
+  locStatus={locStatus}
+  onMyLocation={onMyLocation}
+/>
+        
         {selected != null && (
           <View style={styles.actionPanel}>
             <View style={styles.rowBetween}>
