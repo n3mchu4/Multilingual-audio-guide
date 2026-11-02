@@ -7,6 +7,7 @@ import path from 'node:path';
 import { pool, query } from './database.js';
 import { listLandmarks, getLandmark } from './landmark-repository.js';
 import { storageRoot, validateStorageKey } from './storage.js';
+import { receiveMedia } from './media-upload.js';
 import {
   addBusConnection,
   createManagerAccount,
@@ -107,6 +108,7 @@ async function serveMedia(req,res,pathname) {
   const stream=createReadStream(file,{start,end});
   stream.on('error',()=>res.destroy());res.on('close',()=>stream.destroy());stream.pipe(res);
 }
+const mediaUploads=new Set();
 const server=http.createServer(async (req,res)=>{
   const origin = req.headers.origin;
   const isAllowed = origin && (
@@ -267,6 +269,23 @@ if (
     if (url.pathname.startsWith('/api/manager/')) {
       const manager=await authenticatedManager(req);
       if (!manager) {sendJson(res,401,{error:'Manager authentication required'});return;}
+      if (req.method==='POST' && url.pathname==='/api/manager/media') {
+        // Destination comes from the active account, never a client-supplied path.
+        const workspace=await getManagerWorkspace(manager.user_id);
+        if (workspace.pending) {sendJson(res,409,{error:'Đang có đề xuất chờ duyệt.'});return;}
+        if (mediaUploads.has(manager.user_id) || mediaUploads.size>=4) {
+          sendJson(res,429,{error:'Máy chủ đang xử lý upload. Hãy thử lại sau.'});return;
+        }
+        mediaUploads.add(manager.user_id);
+        try {
+          const data=await receiveMedia(req, {
+            kind:url.searchParams.get('kind'), filename:url.searchParams.get('filename'),
+            landmarkId:workspace.current.id,
+          }, {root:storageRoot});
+          sendJson(res,201,{data});
+        } finally {mediaUploads.delete(manager.user_id);req.resume();}
+        return;
+      }
       if (req.method==='GET' && url.pathname==='/api/manager/workspace') {
         sendJson(res,200,{data:await getManagerWorkspace(manager.user_id)});return;
       }

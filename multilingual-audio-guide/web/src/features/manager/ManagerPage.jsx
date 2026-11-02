@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { managerRequest } from '../../services/api';
 import { useAppStore } from '../../store/useAppStore';
 import './styles/ManagerPortal.css';
+import MediaUpload from '../../components/MediaUpload';
 
 const EMPTY_FORM = {
   titleVi: '',
@@ -40,6 +41,7 @@ export default function ManagerPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const logout = useAppStore((state) => state.logout);
@@ -72,6 +74,7 @@ export default function ManagerPage() {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (uploading || saving || workspace?.pending) return;
     setError('');
     setMessage('');
     setSaving(true);
@@ -137,7 +140,7 @@ export default function ManagerPage() {
                 <h2>Nội dung địa danh</h2>
                 <p>Chỉnh sửa bản nháp rồi gửi Admin duyệt trước khi nội dung công khai được thay đổi.</p>
               </div>
-              <button className="manager-button primary" type="submit" disabled={saving || workspace.pending}>
+              <button className="manager-button primary" type="submit" disabled={saving || uploading || workspace.pending}>
                 {saving ? 'Đang gửi...' : 'Gửi đề xuất cập nhật'}
               </button>
             </div>
@@ -161,6 +164,10 @@ export default function ManagerPage() {
               <label>Kinh độ
                 <input name="longitude" type="number" min="-180" max="180" step="any" value={form.longitude} onChange={updateField} />
               </label>
+              <div className="wide">
+                <MediaUpload label="Tải ảnh bìa" kind="image" disabled={saving || uploading || workspace.pending}
+                  onBusyChange={setUploading} onUploaded={(url) => setForm((current) => ({ ...current, backgroundImageUrl: url }))} />
+              </div>
               <label className="wide">Đường dẫn ảnh bìa
                 <input name="backgroundImageUrl" value={form.backgroundImageUrl} onChange={updateField} />
               </label>
@@ -176,18 +183,29 @@ export default function ManagerPage() {
               <label>Lời thuyết minh tiếng Anh
                 <textarea name="transcriptEn" value={form.transcriptEn} onChange={updateField} rows="6" />
               </label>
+              <MediaUpload label="Tải audio tiếng Việt" kind="audio" disabled={saving || uploading || workspace.pending}
+                onBusyChange={setUploading} onUploaded={(url) => setForm((current) => ({ ...current, audioViUrl: url }))} />
+              <MediaUpload label="Tải audio tiếng Anh" kind="audio" disabled={saving || uploading || workspace.pending}
+                onBusyChange={setUploading} onUploaded={(url) => setForm((current) => ({ ...current, audioEnUrl: url }))} />
               <label>Đường dẫn âm thanh tiếng Việt
                 <input name="audioViUrl" value={form.audioViUrl} onChange={updateField} />
               </label>
               <label>Đường dẫn âm thanh tiếng Anh
                 <input name="audioEnUrl" value={form.audioEnUrl} onChange={updateField} />
               </label>
+              <div className="wide">
+                <MediaUpload label="Thêm ảnh thư viện (mỗi lần một ảnh)" kind="image"
+                  disabled={saving || uploading || workspace.pending || form.gallery.split(/\r?\n/).filter((url) => url.trim()).length >= 20}
+                  onBusyChange={setUploading} onUploaded={(url) => setForm((current) => ({
+                    ...current, gallery: [...current.gallery.split(/\r?\n/).filter((image) => image.trim()), url].join('\n'),
+                  }))} />
+              </div>
               <label className="wide">Ảnh thư viện (mỗi đường dẫn trên một dòng)
                 <textarea name="gallery" value={form.gallery} onChange={updateField} rows="4" />
               </label>
             </div>
             <p className="manager-help">
-              Nếu thay đổi lời thuyết minh, cần điền đường dẫn cho cả hai bản âm thanh. Tối đa 20 ảnh thư viện.
+              Tệp tải lên được điền URL vào bản nháp. Nếu thay đổi lời thuyết minh, cần cung cấp cả hai bản âm thanh. Tối đa 20 ảnh thư viện.
             </p>
           </form>
 
