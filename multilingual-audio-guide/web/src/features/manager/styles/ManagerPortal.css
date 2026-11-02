@@ -87,3 +87,18 @@
   .manager-portal .manager-fields { grid-template-columns: 1fr; }
   .manager-portal .manager-fields .wide { grid-column: auto; }
 }
+
+.manager-portal .media-upload {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  padding: 16px;
+  border: 1px dashed #d9a1bc;
+  border-radius: 12px;
+  background: #fff9fc;
+  font-size: 13px;
+}
+.manager-portal .media-upload small { color: #586b67; }
+.manager-portal .media-upload progress { width: 100%; accent-color: var(--manager-pink); }
+.manager-portal .media-upload button { justify-self: start; }
+.manager-portal .media-error { color: #a83f38; }

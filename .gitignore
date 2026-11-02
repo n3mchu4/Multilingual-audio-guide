@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+# Uploaded local media (URLs are stored in PostgreSQL)
+multilingual-audio-guide/db/storage/images/
+multilingual-audio-guide/db/storage/audio/
