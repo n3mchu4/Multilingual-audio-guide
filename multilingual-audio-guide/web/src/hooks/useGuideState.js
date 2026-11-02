@@ -1,4 +1,4 @@
-mport { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useAudioPlayer } from "./useAudioPlayer";
 
 const LANGUAGE_STORAGE_KEY = "saigon-audio-guide.language";
@@ -74,5 +74,5 @@ export function useGuideState(words, places, onPlaybackStarted) {
     enterApp,
     audio,
   };
-}
+};
 
