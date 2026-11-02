@@ -333,24 +333,8 @@ export function DetailContent({
               aria-valuetext={`${time(audio.elapsed)} / ${time(audio.duration)}`}
             />
           </div>
-          <div className="audio-skip">
-            <button
-              type="button"
-              onClick={() => audio.skip(-10)}
-              disabled={!audioUrl || !audio.duration}
-              aria-label={lang === "vi" ? "Lùi 10 giây" : "Back 10 seconds"}
-            >
-              ↺10
-            </button>
-            <button
-              type="button"
-              onClick={() => audio.skip(10)}
-              disabled={!audioUrl || !audio.duration}
-              aria-label={lang === "vi" ? "Tiến 10 giây" : "Forward 10 seconds"}
-            >
-              10↻
-            </button>
-          </div>
+          
+      
           <div className="audio-time">
             {time(audio.elapsed)} / {time(audio.duration)}
           </div>
@@ -377,13 +361,19 @@ export function DetailContent({
           <h2>{tr("transcriptTitle")}</h2>
           <span className="transcript-hint">◉ {tr("listen")} &amp; {tr("readMore")}</span>
         </div>
-        <SynchronizedTranscript
-          text={place.history?.[lang]}
-          cues={place.transcriptCues?.[lang]}
-          audio={audio}
-          lang={lang}
-          tr={tr}
-        />
+                
+        <div
+          className="plain-transcript"
+          style={{
+            whiteSpace: "pre-line",
+            lineHeight: 1.8,
+            fontSize: "15px",
+          }}
+        >
+          {place.history?.[lang]?.trim() ||
+            tr("noTranscript")}
+        </div>
+
       </section>
       <section className="detail-section">
         <div className="section-head">
