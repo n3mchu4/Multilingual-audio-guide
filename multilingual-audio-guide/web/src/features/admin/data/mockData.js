@@ -22,10 +22,6 @@ export const initialPlaces = [
     id: 1,
     name: 'Chợ Bến Thành',
     district: 'Phường Bến Thành',
-    buses: [
-      { no: '01', stop: 'Trạm Bến Thành' },
-      { no: '03', stop: 'Trạm Lê Lai' },
-    ],
     content:
       'Chợ Bến Thành là một trong những khu chợ nổi tiếng tại trung tâm Thành phố Hồ Chí Minh. Nơi đây tập trung nhiều mặt hàng và là điểm tham quan quen thuộc của du khách.',
     request: null,
@@ -35,10 +31,6 @@ export const initialPlaces = [
     id: 2,
     name: 'Bến Bạch Đằng',
     district: 'Đường Tôn Đức Thắng',
-    buses: [
-      { no: '03', stop: 'Trạm Công trường Mê Linh' },
-      { no: '19', stop: 'Trạm Bến Bạch Đằng' },
-    ],
     content:
       'Bến Bạch Đằng nằm bên sông Sài Gòn, là không gian công cộng để ngắm cảnh ven sông và kết nối với các hoạt động du lịch đường thủy.',
     request: {
@@ -52,10 +44,6 @@ export const initialPlaces = [
     id: 3,
     name: 'Dinh Độc Lập',
     district: 'Đường Nam Kỳ Khởi Nghĩa',
-    buses: [
-      { no: '04', stop: 'Trạm Dinh Độc Lập' },
-      { no: '30', stop: 'Trạm Pasteur' },
-    ],
     content:
       'Dinh Độc Lập là công trình gắn với nhiều dấu mốc lịch sử Việt Nam, hiện là di tích lịch sử và địa điểm tham quan tại trung tâm thành phố.',
     request: null,
@@ -65,10 +53,6 @@ export const initialPlaces = [
     id: 4,
     name: 'Nhà thờ Đức Bà',
     district: 'Công trường Công xã Paris',
-    buses: [
-      { no: '03', stop: 'Trạm Nhà thờ Đức Bà' },
-      { no: '14', stop: 'Trạm Hai Bà Trưng' },
-    ],
     content:
       'Nhà thờ Đức Bà Sài Gòn là công trình kiến trúc nổi bật tại trung tâm thành phố, nằm trong khu vực có nhiều công trình và điểm tham quan lịch sử.',
     request: {
@@ -82,10 +66,6 @@ export const initialPlaces = [
     id: 5,
     name: 'Bưu điện Trung tâm Sài Gòn',
     district: 'Công trường Công xã Paris',
-    buses: [
-      { no: '03', stop: 'Trạm Bưu điện Thành phố' },
-      { no: '36', stop: 'Trạm Lê Duẩn' },
-    ],
     content:
       'Bưu điện Trung tâm Sài Gòn nổi bật với kiến trúc cổ điển, là công trình lâu đời vẫn phục vụ hoạt động bưu chính và đón khách tham quan.',
     request: null,
@@ -95,20 +75,6 @@ export const initialPlaces = [
     id: 6,
     name: 'Đường sách Nguyễn Văn Bình',
     district: 'Đường Nguyễn Văn Bình',
-    buses: [{ no: '06', stop: 'Trạm Nhà thờ Đức Bà' }],
-    content:
-      'Đường sách Nguyễn Văn Bình là không gian văn hóa đọc với nhiều gian hàng sách, hoạt động giao lưu và điểm dừng chân yên tĩnh giữa trung tâm thành phố.',
-    request: null,
-    manager: '—',
-  },
-  {
-    id: 7,
-    name: 'Nhà hát Thành phố',
-    district: 'Đường Đồng Khởi',
-    buses: [
-      { no: '19', stop: 'Trạm Nhà hát Thành phố' },
-      { no: '45', stop: 'Trạm Công trường Lam Sơn' },
-    ],
     content:
       'Nhà hát Thành phố là công trình kiến trúc tiêu biểu, nơi tổ chức các chương trình biểu diễn nghệ thuật và là điểm tham quan ở khu vực trung tâm.',
     request: null,
@@ -230,5 +196,4 @@ export const initialActivities = [
   { icon: '↻', text: 'Manager gửi yêu cầu cập nhật nội dung Bến Bạch Đằng.', time: '02/10/2026 · 09:40' },
   { icon: '↻', text: 'Manager gửi yêu cầu cập nhật nội dung Nhà thờ Đức Bà.', time: '01/10/2026 · 16:15' },
   { icon: '♙', text: 'Tài khoản Manager “Lê Hoàng Nam” được tạo.', time: '21/08/2026 · 10:22' },
-  { icon: '▤', text: 'Cập nhật trạm xuống tuyến xe buýt minh họa.', time: '20/08/2026 · 14:06' },
 ];

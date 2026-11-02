@@ -99,14 +99,6 @@ export default function Dashboard() {
 
         <div className="stat">
           <div className="stat-top">
-            <div className="stat-icon">▤</div>
-            <span className="trend">Đã kết nối</span>
-          </div>
-          <strong>{stats.buses}</strong>
-          <span className="label">Kết nối tuyến xe buýt</span>
-        </div>
-        <div className="stat">
-          <div className="stat-top">
             <div className="stat-icon">♧</div>
             <span className="trend">Trình duyệt duy nhất</span>
           </div>
@@ -308,13 +300,6 @@ export default function Dashboard() {
               <div>
                 <b>Tài khoản Manager</b>
                 <p>{stats.activeManagers} tài khoản Manager đang hoạt động.</p>
-              </div>
-            </div>
-            <div className="notice">
-              <span className="notice-icon">▤</span>
-              <div>
-                <b>Dữ liệu xe buýt</b>
-                <p>{stats.buses} kết nối tuyến/trạm đang được lưu trong PostgreSQL.</p>
               </div>
             </div>
           </div>
