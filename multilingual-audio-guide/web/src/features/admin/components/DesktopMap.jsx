@@ -12,7 +12,6 @@ export default function DesktopMap({
   const [from, setFrom] = useState(0),
     [to, setTo] = useState(2);
   const [route, setRoute] = useState(null);
-  const [busTarget, setBusTarget] = useState(null);
   const routePoints = () => {
     if (!route || route[0] === route[1]) return null;
     const [a, b] = route,
@@ -103,57 +102,6 @@ export default function DesktopMap({
               <span>{p.name[lang]}</span>
             </button>
           ))}
-          <button
-            className="bus-map-button"
-            type="button"
-            onClick={() => setBusTarget(detail ? currentPlace : to)}
-          >
-            🚌 {tr("busConnect")}
-          </button>
-          {busTarget !== null && (
-            <div className="bus-popup">
-              <div className="bus-popup-head">
-                <div>
-                  <strong>🚌 {tr("busTitle")}</strong>
-                  <small>
-                    {tr("busDestination")}: {places[busTarget]?.name[lang]}
-                  </small>
-                </div>
-                <button
-                  className="bus-popup-close"
-                  type="button"
-                  onClick={() => setBusTarget(null)}
-                  aria-label={tr("busClose")}
-                >
-                  ×
-                </button>
-              </div>
-              <select
-                className="bus-destination-select"
-                value={busTarget}
-                onChange={(e) => setBusTarget(Number(e.target.value))}
-                aria-label={tr("busDestination")}
-              >
-                {places.map((p, i) => (
-                  <option key={p.id} value={i}>
-                    {p.name[lang]}
-                  </option>
-                ))}
-              </select>
-              <div className="bus-route-list">
-                {places[busTarget]?.buses?.length ? places[busTarget].buses.map((item, index) => (
-                  <article className="bus-route-item" key={`${item.no}-${item.stop}-${index}`}>
-                    <span className="bus-route-number">{item.no}</span>
-                    <div>
-                      <strong>{tr("busLine", `Tuyến xe buýt ${item.no}`)}</strong>
-                      <small>{tr("busStop")}: {item.stop}</small>
-                    </div>
-                  </article>
-                )) : <p>{tr("busEmpty", "Chưa có tuyến xe buýt được lưu.")}</p>}
-              </div>
-              <p className="bus-disclaimer">{tr("busDisclaimer")}</p>
-            </div>
-          )}
         </div>
         {!detail && (
           <div className="map-legend">

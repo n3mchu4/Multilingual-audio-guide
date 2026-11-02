@@ -166,27 +166,6 @@ export function AdminProvider({ children }) {
     );
   };
 
-  const addBus = async ({ placeId, no, stop }) => {
-    if (!placeId || !no || !stop) {
-      toast('Vui lòng nhập số tuyến và tên trạm xuống.');
-      return false;
-    }
-    return runMutation(
-      () => adminRequest(`/api/admin/landmarks/${encodeURIComponent(placeId)}/buses`, {
-        method: 'POST',
-        body: JSON.stringify({ no, stop }),
-      }),
-      'Đã thêm kết nối tuyến xe buýt.',
-    );
-  };
-
-  const removeBus = async (connectionId) => runMutation(
-    () => adminRequest(`/api/admin/bus-connections/${encodeURIComponent(connectionId)}`, {
-      method: 'DELETE',
-    }),
-    'Đã xóa kết nối xe buýt.',
-  );
-
   const stats = {
     places: places.length,
     activeAccounts: accounts.filter((account) => account.active).length,
@@ -194,7 +173,6 @@ export function AdminProvider({ children }) {
     visitors: analytics ? Number(analytics.visitors) : null,
     listens: analytics ? Number(analytics.listens) : null,
     pending: places.filter((place) => place.request).length,
-    buses: places.reduce((sum, place) => sum + place.buses.length, 0),
     activeUsers: analytics?.activeUsers ?? null,
     totalAudioPlays: analytics?.totalAudioPlays ?? null,
     playsByLandmark: analytics?.playsByLandmark ?? {},
@@ -219,8 +197,6 @@ export function AdminProvider({ children }) {
     savePlace,
     saveAccount,
     toggleAccount,
-    addBus,
-    removeBus,
   };
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;

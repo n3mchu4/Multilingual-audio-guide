@@ -30,7 +30,6 @@ function mapLandmark(landmark) {
     },
     image: landmark.background_image_url || "",
     gallery: landmark.images || [],
-    buses: landmark.buses || [],
   };
 }
 
