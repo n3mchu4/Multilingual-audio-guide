@@ -1,0 +1,12 @@
+/* Chỉ áp dụng cho bản đồ thật, không thay đổi CSS toàn website. */
+.sg-real-map-card .sg-real-map { height: 365px; width: 100%; background: #e9f4f2; z-index: 0; }
+.sg-real-map-card .sg-map-controls { padding: 12px; background: #fff; display: flex; flex-direction: column; gap: 7px; }
+.sg-real-map-card .sg-map-controls button { border: 0; background: #e9f4f2; color: #167d78; border-radius: 10px; padding: 12px; font-weight: 700; }
+.sg-real-map-card .sg-map-controls small { color: #65717d; }
+.sg-real-map-card .sg-map-error { padding: 10px; color: #b91c1c; }
+.sg-leaflet-pin-wrap { background: transparent; border: 0; }
+.sg-leaflet-pin { display: block; position: relative; width: 26px; height: 26px; border: 3px solid white; border-radius: 50% 50% 50% 0; background: #167d78; transform: rotate(-45deg); box-shadow: 0 2px 8px #0005; }
+.sg-leaflet-pin.selected { background: #d63384; }
+.sg-leaflet-pin span { display: block; position: absolute; width: 7px; height: 7px; border-radius: 50%; background: white; left: 7px; top: 7px; }
+.sg-real-map-card .leaflet-container { font-family: inherit; }
+@media (max-width: 900px) { .sg-real-map-card .sg-real-map { height: 290px; } }

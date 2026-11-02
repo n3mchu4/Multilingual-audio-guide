@@ -74,5 +74,5 @@ export function useGuideState(words, places, onPlaybackStarted) {
     enterApp,
     audio,
   };
-}
+};
 

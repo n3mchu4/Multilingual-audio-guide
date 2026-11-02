@@ -15,6 +15,8 @@ import "./UserWebPage.css";
 
 function mapLandmark(landmark) {
   return {
+    lat: landmark.latitude,
+    lng: landmark.longitude,
     id: landmark.id,
     name: { vi: landmark.title_vi, en: landmark.title_en },
     audioFile: { vi: landmark.audio_vi_url, en: landmark.audio_en_url },
