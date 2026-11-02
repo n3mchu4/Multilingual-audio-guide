@@ -442,23 +442,6 @@ export function DetailContent({
         </div>
         {!mobile && <div className="gallery-hint">{tr("galleryHint")}</div>}
       </section>
-      {place.buses?.length > 0 && (
-        <section className="detail-section">
-          <div className="section-head">
-            <h2>{tr("busTitle")}</h2>
-          </div>
-          <ul className="bus-list">
-            {place.buses.map((bus, index) => (
-              <li key={`${bus.no}-${bus.stop}-${index}`}>
-                <span className="bus-no">
-                  {lang === "vi" ? "Tuyến" : "Route"} {bus.no}
-                </span>
-                <span className="bus-stop">{bus.stop}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
       {lightboxOpen && (
         <Lightbox
           images={galleryImages}

@@ -250,13 +250,6 @@ export const words = {
     aboutDesc:
       "Nội dung địa danh, ảnh và thuyết minh audio được cập nhật từ hệ thống quản lý của Saigon Audio Guide. Bản đồ và lộ trình hiện vẫn là minh họa.",
     routeResultTitle: "Lộ trình gợi ý",
-    busConnect: "Kết nối bus",
-    busTitle: "Các tuyến xe buýt gần điểm đến",
-    busDestination: "Điểm đến",
-    busStop: "Trạm dừng gần khu vực",
-    busDisclaimer:
-      "Danh sách tuyến minh họa; vui lòng kiểm tra thông tin vận hành thực tế.",
-    busClose: "Đóng",
     routeFrom: "Điểm xuất phát",
     routeTo: "Điểm đến",
     routeSame: "Hãy chọn hai địa danh khác nhau.",
@@ -323,13 +316,6 @@ export const words = {
     aboutDesc:
       "Landmark content, photos and audio guides are managed through the Saigon Audio Guide system. The map and routes are still illustrative.",
     routeResultTitle: "Suggested route",
-    busConnect: "Connect bus",
-    busTitle: "Bus routes near destination",
-    busDestination: "Destination",
-    busStop: "Nearby stop",
-    busDisclaimer:
-      "Illustrative routes; please verify current service information.",
-    busClose: "Close",
     routeFrom: "Starting point",
     routeTo: "Destination",
     routeSame: "Please choose two different landmarks.",
@@ -385,89 +371,3 @@ export const mapPoints = [
   },
 ];
 
-export const busRoutesByPlace = [
-  [
-    {
-      no: "01",
-      name: "Bến Thành – Bến xe Chợ Lớn",
-      stop: "Trạm khu vực Chợ Bến Thành",
-    },
-    {
-      no: "152",
-      name: "Khu dân cư Trung Sơn – Sân bay",
-      stop: "Trạm gần vòng xoay Quách Thị Trang",
-    },
-  ],
-  [
-    {
-      no: "03",
-      name: "Bến Thành – Thạnh Lộc",
-      stop: "Trạm Công trường Mê Linh / Bạch Đằng",
-    },
-    {
-      no: "19",
-      name: "Bến Thành – Đại học Quốc gia",
-      stop: "Trạm trên trục Tôn Đức Thắng",
-    },
-  ],
-  [
-    {
-      no: "02",
-      name: "Bến Thành – Bến xe Miền Tây",
-      stop: "Trạm gần đường Lê Duẩn",
-    },
-    {
-      no: "03",
-      name: "Bến Thành – Thạnh Lộc",
-      stop: "Trạm gần Dinh Độc Lập",
-    },
-  ],
-  [
-    {
-      no: "04",
-      name: "Bến Thành – Cộng Hòa – An Sương",
-      stop: "Trạm khu vực Nhà thờ Đức Bà",
-    },
-    {
-      no: "36",
-      name: "Bến Thành – Thới An",
-      stop: "Trạm trên đường Lê Duẩn",
-    },
-  ],
-  [
-    {
-      no: "04",
-      name: "Bến Thành – Cộng Hòa – An Sương",
-      stop: "Trạm Bưu điện Trung tâm",
-    },
-    {
-      no: "18",
-      name: "Bến Thành – Chợ Hiệp Thành",
-      stop: "Trạm trên đường Công xã Paris",
-    },
-  ],
-  [
-    {
-      no: "36",
-      name: "Bến Thành – Thới An",
-      stop: "Trạm khu vực Đường sách",
-    },
-    {
-      no: "03",
-      name: "Bến Thành – Thạnh Lộc",
-      stop: "Trạm gần Nhà thờ Đức Bà",
-    },
-  ],
-  [
-    {
-      no: "04",
-      name: "Bến Thành – Cộng Hòa – An Sương",
-      stop: "Trạm khu vực Nhà hát Thành phố",
-    },
-    {
-      no: "19",
-      name: "Bến Thành – Đại học Quốc gia",
-      stop: "Trạm trên đường Tôn Đức Thắng",
-    },
-  ],
-];
