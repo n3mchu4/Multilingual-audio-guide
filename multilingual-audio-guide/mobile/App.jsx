@@ -21,6 +21,10 @@ import NavigationMap from './components/NavigationMap';
 import { errorMessage } from "./services/apiClient";
 import { readSavedPlaces, savePlaces } from "./services/offlinePlaces";
 import {
+  getDownloadedImage,
+  downloadImage,
+} from "./services/offlineImages";
+import {
   getDownloadedAudio,
   downloadAudio,
   removeDownloadedAudio,
@@ -101,7 +105,12 @@ export default function App() {
 const [downloadedAudioUri, setDownloadedAudioUri] = useState(null);
 const [audioDownloadBusy, setAudioDownloadBusy] = useState(false);
 const [audioDownloadError, setAudioDownloadError] = useState('');
-  const [userLoc, setUserLoc] = useState(null); // { lat, lng } vị trí thật
+// Quản lý đường dẫn ảnh đã lưu và trạng thái tải ảnh.
+const [downloadedImages, setDownloadedImages] = useState({});
+const [imageDownloadBusy, setImageDownloadBusy] = useState(false);
+const [imageDownloadError, setImageDownloadError] = useState('');  
+const imageDownloadLock = useRef(false);
+const [userLoc, setUserLoc] = useState(null); // { lat, lng } vị trí thật
   const [locStatus, setLocStatus] = useState("idle"); // idle | loading | ok | denied | error
   const [currentPlace, setCurrentPlace] = useState(0);
   const [playingPlaceIndex, setPlayingPlaceIndex] = useState(0);
@@ -201,6 +210,48 @@ useEffect(() => {
     audioUrl: {},
   };
   const playingPlace = placesList[playingPlaceIndex] || place;
+  // Tìm ảnh đã lưu của danh sách địa danh để dùng lại khi mất mạng.
+useEffect(() => {
+  let active = true;
+
+  async function loadSavedImages() {
+    const urls = [...new Set(
+      placesList.flatMap((item) => [
+        item.image,
+        ...(item.gallery || []),
+      ]).filter(Boolean)
+    )];
+
+    const entries = await Promise.all(
+      urls.map(async (url) => [
+        url,
+        await getDownloadedImage(url),
+      ])
+    );
+
+    if (!active) return;
+
+    const saved = Object.fromEntries(
+      entries.filter(([, uri]) => uri != null)
+    );
+
+    setDownloadedImages((current) => ({
+      ...current,
+      ...saved,
+    }));
+  }
+
+  void loadSavedImages();
+
+  return () => {
+    active = false;
+  };
+}, [placesList]);
+
+// Ưu tiên ảnh trên máy, dùng URL online nếu chưa tải.
+const imageSource = (url) => ({
+  uri: downloadedImages[url] || url || '',
+});
   // Ghi nhớ lựa chọn hiện tại để tránh hiện kết quả tải nhầm địa danh.
 const audioSelectionRef = useRef(null);
 const audioDownloadLock = useRef(false);
@@ -766,10 +817,62 @@ const onRemoveDownloadedAudio = async () => {
     setAudioDownloadBusy(false);
   }
 };  
+// Tải ảnh của các địa danh; giữ ảnh tải thành công và cho phép thử lại.
+const onDownloadImages = async () => {
+  if (imageDownloadLock.current) return;
+
+  const urls = [...new Set(
+    placesList.flatMap((item) => [
+      item.image,
+      ...(item.gallery || []),
+    ]).filter(Boolean)
+  )];
+
+  if (urls.length === 0) {
+    setImageDownloadError(
+      lang === 'vi'
+        ? 'Chưa có ảnh để tải.'
+        : 'No images available to download.'
+    );
+    return;
+  }
+
+  imageDownloadLock.current = true;
+  setImageDownloadBusy(true);
+  setImageDownloadError('');
+
+  let failed = 0;
+
+  try {
+    for (const url of urls) {
+      try {
+        const uri = await downloadImage(url);
+
+        setDownloadedImages((current) => ({
+          ...current,
+          [url]: uri,
+        }));
+      } catch {
+        failed += 1;
+      }
+    }
+
+    if (failed > 0) {
+      setImageDownloadError(
+        lang === 'vi'
+          ? `Chưa tải được ${failed}/${urls.length} ảnh. Kiểm tra mạng và dung lượng máy rồi thử lại.`
+          : `Could not download ${failed}/${urls.length} images. Check your connection and storage, then retry.`
+      );
+    }
+  } finally {
+    imageDownloadLock.current = false;
+    setImageDownloadBusy(false);
+  }
+};
 const welcome = (
     <ScrollView contentContainerStyle={styles.welcomeBody}>
       <ImageBackground
-        source={photo(placesList[2]?.image || placesList[0]?.image)}
+        source={imageSource(placesList[2]?.image || placesList[0]?.image)}
         resizeMode="cover"
         imageStyle={styles.welcomeImage}
         style={styles.welcomeHero}
@@ -921,7 +1024,7 @@ const welcome = (
           onPress={() => openDetail(i)}
           style={styles.placeCard}
         >
-          <Image source={photo(p.image)} style={styles.placePhoto} />
+          <Image source={imageSource(p.image)} style={styles.placePhoto} />
           <View style={styles.placeCopy}>
             <Text style={styles.placeTitle}>{p.name[lang]}</Text>
             <Text style={styles.meta}>
@@ -958,7 +1061,7 @@ const welcome = (
         <Text style={styles.pinkText}>← {tr("backHome")}</Text>
       </Pressable>
       <ImageBackground
-        source={photo(place.image)}
+        source={imageSource(place.image)}
         style={styles.detailHero}
         imageStyle={styles.detailHeroImage}
       >
@@ -1093,7 +1196,7 @@ const welcome = (
           <Text style={styles.cardTitle}>{tr("galleryTitle")}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
             {[place.image, ...place.gallery].map((url, i) => (
-              <Image key={i} source={photo(url, 400)} style={styles.galleryPhoto} />
+              <Image key={i} source={imageSource(url, 400)} style={styles.galleryPhoto} />
             ))}
           </ScrollView>
         </View>
@@ -1108,6 +1211,45 @@ const welcome = (
         <Text style={styles.title}>{tr("settingsTitle")}</Text>
       </View>
       <View style={styles.section}>
+                <Text style={styles.cardTitle}>
+          {lang === 'vi' ? 'Ảnh ngoại tuyến' : 'Offline images'}
+        </Text>
+
+        <Text style={styles.paragraph}>
+          {lang === 'vi'
+            ? 'Tải ảnh bìa và ảnh thư viện của các địa danh để xem khi mất mạng.'
+            : 'Download landmark cover and gallery images for offline viewing.'}
+        </Text>
+
+        <Pressable
+          style={[styles.secondarySmall, { marginTop: 12 }]}
+          onPress={onDownloadImages}
+          disabled={imageDownloadBusy}
+        >
+          <Text style={styles.pinkText}>
+            {imageDownloadBusy
+              ? (lang === 'vi'
+                  ? 'Đang tải ảnh...'
+                  : 'Downloading images...')
+              : (lang === 'vi'
+                  ? '↓ Tải ảnh về máy'
+                  : '↓ Download images')}
+          </Text>
+        </Pressable>
+
+        <Text style={styles.note}>
+          {lang === 'vi'
+            ? `Đã lưu ${Object.keys(downloadedImages).length} ảnh trên máy.`
+            : `${Object.keys(downloadedImages).length} images saved on this device.`}
+        </Text>
+
+        {imageDownloadError ? (
+          <Text accessibilityRole="alert" style={styles.errorText}>
+            {imageDownloadError}
+          </Text>
+        ) : null}
+
+        <View style={{ height: 20 }} />
         <Text style={styles.cardTitle}>{tr("languageSettings")}</Text>
         <Text style={styles.paragraph}>{tr("languageSettingsDesc")}</Text>
         <Choice selected={lang === "vi"} onPress={() => setLanguage("vi")}>
