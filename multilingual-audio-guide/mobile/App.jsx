@@ -700,7 +700,73 @@ const onDownloadAudio = async () => {
     setAudioDownloadBusy(false);
   }
 };
-  const welcome = (
+// Xóa audio tải xuống; dừng bài tương ứng nếu trình phát đang sử dụng.
+const onRemoveDownloadedAudio = async () => {
+  if (audioDownloadLock.current) return;
+
+  const landmarkId = place.id;
+  const selectedLang = lang;
+  const sourceUrl = place.audioUrl?.[selectedLang] || '';
+
+  if (!landmarkId) return;
+
+  const selectionKey = JSON.stringify([
+    landmarkId,
+    selectedLang,
+    sourceUrl,
+  ]);
+
+  audioDownloadLock.current = true;
+  setAudioDownloadBusy(true);
+  setAudioDownloadError('');
+
+  try {
+    const isCurrentAudio =
+      playingPlaceIndex === currentPlace &&
+      playingLanguage === selectedLang;
+
+    if (isCurrentAudio) {
+      playbackEpoch.current += 1;
+      pendingRef.current = null;
+      clearLoadTimer();
+
+      player.pause();
+
+      if (listeningRef.current) {
+        void flushListening(
+          listeningRef.current.update({ playing: false })
+        );
+      }
+
+      listeningRef.current = null;
+      lastSentRef.current = -1;
+      sourceRef.current = '';
+
+      player.replace(null);
+      setAudioLoading(false);
+      setAudioEnded(false);
+      setAudioError('');
+    }
+
+    await removeDownloadedAudio(landmarkId, selectedLang);
+
+    if (audioSelectionRef.current === selectionKey) {
+      setDownloadedAudioUri(null);
+    }
+  } catch {
+    if (audioSelectionRef.current === selectionKey) {
+      setAudioDownloadError(
+        selectedLang === 'vi'
+          ? 'Chưa xóa được audio. Vui lòng thử lại.'
+          : 'Could not remove the downloaded audio. Please retry.'
+      );
+    }
+  } finally {
+    audioDownloadLock.current = false;
+    setAudioDownloadBusy(false);
+  }
+};  
+const welcome = (
     <ScrollView contentContainerStyle={styles.welcomeBody}>
       <ImageBackground
         source={photo(placesList[2]?.image || placesList[0]?.image)}
@@ -978,6 +1044,19 @@ const onDownloadAudio = async () => {
                     : '↓ Download audio for offline use')}
           </Text>
         </Pressable>
+                {downloadedAudioUri != null && (
+          <Pressable
+            style={[styles.secondarySmall, { marginTop: 8 }]}
+            onPress={onRemoveDownloadedAudio}
+            disabled={audioDownloadBusy}
+          >
+            <Text style={styles.pinkText}>
+              {lang === 'vi'
+                ? 'Xoá bản tải xuống'
+                : 'Remove downloaded audio'}
+            </Text>
+          </Pressable>
+        )}
 
         {audioDownloadError ? (
           <Text accessibilityRole="alert" style={styles.errorText}>
