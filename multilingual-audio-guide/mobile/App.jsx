@@ -892,7 +892,7 @@ const playAudio = async (targetIndex, start = null) => {
           </ScrollView>
 
           {/* ----- MINI AUDIO PLAYER TOÀN CỤC ----- */}
-          {status.playing && page !== "detail" && (
+          {sourceRef.current !== '' && page !== "detail" && (
             <Pressable 
               style={styles.miniPlayer} 
               onPress={() => openDetail(playingPlaceIndex)}
