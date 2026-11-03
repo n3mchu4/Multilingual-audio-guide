@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import NavigationMap from './components/NavigationMap';
 import { errorMessage } from "./services/apiClient";
+import { readSavedPlaces, savePlaces } from "./services/offlinePlaces";
 import {
   words,
   fetchPlacesFromAPI,
@@ -90,6 +91,7 @@ export default function App() {
   const [placesLoading, setPlacesLoading] = useState(true);
   const [placesError, setPlacesError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [savedContentAt, setSavedContentAt] = useState(null);
   const [userLoc, setUserLoc] = useState(null); // { lat, lng } vị trí thật
   const [locStatus, setLocStatus] = useState("idle"); // idle | loading | ok | denied | error
   const [currentPlace, setCurrentPlace] = useState(0);
@@ -114,25 +116,57 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  // M01-M03 + M10: tải danh sách địa danh, có thể tải lại khi lỗi.
-  useEffect(() => {
-    let active = true;
-    async function loadData() {
-      setPlacesLoading(true);
-      setPlacesError("");
-      try {
-        const apiData = await fetchPlacesFromAPI();
-        if (active) setPlacesList(apiData);
-      } catch (error) {
-        if (active) setPlacesError(errorMessage(error, lang));
-      } finally {
-        if (active) setPlacesLoading(false);
-      }
+// Đọc bản đã lưu trước, rồi cập nhật nội dung từ API.
+useEffect(() => {
+  let active = true;
+
+  async function loadData() {
+    setPlacesLoading(true);
+    setPlacesError('');
+
+    const saved = await readSavedPlaces();
+    if (!active) return;
+
+    const hasSaved = Boolean(saved?.places.length);
+
+    if (hasSaved) {
+      setPlacesList(saved.places);
+      setSavedContentAt(saved.savedAt);
+      setPlacesLoading(false);
     }
-    void loadData();
-    return () => { active = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reloadKey]);
+
+    try {
+      const apiData = await fetchPlacesFromAPI();
+      if (!active) return;
+
+      setPlacesList(apiData);
+      setSavedContentAt(null);
+
+      await savePlaces(apiData);
+    } catch (error) {
+      if (!active) return;
+
+      if (!hasSaved) {
+        setPlacesError(
+          `${errorMessage(error, lang)} ${
+            lang === 'vi'
+              ? 'Chưa có nội dung đã lưu. Cần kết nối để tải lần đầu.'
+              : 'No saved content. Connect to download it first.'
+          }`
+        );
+      }
+    } finally {
+      if (active) setPlacesLoading(false);
+    }
+  }
+
+  void loadData();
+
+  return () => {
+    active = false;
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [reloadKey]);
 
   useEffect(() => startPresence({
     send: active => {
@@ -625,6 +659,13 @@ const playAudio = async (targetIndex, start = null) => {
     <>
       <View style={styles.pageHeading}>
   <Text style={styles.title}>{tr("homeTitle")}</Text>
+  {savedContentAt != null && (
+  <Text style={styles.paragraph}>
+    {lang === 'vi'
+      ? 'Đang dùng nội dung đã lưu trên máy. Ảnh và audio chưa được tải ngoại tuyến.'
+      : 'Using saved content. Images and audio have not been downloaded for offline use.'}
+  </Text>
+)}
 </View>
       <View style={styles.mapCard}>
         <Pressable
