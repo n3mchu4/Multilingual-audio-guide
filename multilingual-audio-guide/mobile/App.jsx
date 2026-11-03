@@ -931,8 +931,8 @@ const welcome = (
   {savedContentAt != null && (
   <Text style={styles.paragraph}>
     {lang === 'vi'
-      ? 'Đang dùng nội dung đã lưu trên máy. Ảnh và audio chưa được tải ngoại tuyến.'
-      : 'Using saved content. Images and audio have not been downloaded for offline use.'}
+      ? 'Đang dùng nội dung đã lưu trên máy. Chỉ ảnh và audio đã tải xuống mới dùng được khi mất mạng.'
+      : 'Using saved content. Only downloaded images and audio are available offline.'}
   </Text>
 )}
 </View>
@@ -1017,7 +1017,9 @@ const welcome = (
             </View>
    )}
       </View>
-      <Text style={[styles.eyebrow, { margin: 16 }]}>DANH SÁCH KHÁM PHÁ</Text>
+     <Text style={[styles.eyebrow, { margin: 16 }]}>
+  {lang === 'vi' ? 'DANH SÁCH KHÁM PHÁ' : 'EXPLORE LANDMARKS'}
+</Text>
       {placesList.map((p, i) => (
         <Pressable
           key={p.id || i}
@@ -1028,7 +1030,7 @@ const welcome = (
           <View style={styles.placeCopy}>
             <Text style={styles.placeTitle}>{p.name[lang]}</Text>
             <Text style={styles.meta}>
-              ⌖ {p.time} · {tr("walking")}
+              ⌖ {tr("walking")}
             </Text>
             <Text style={styles.paragraph}>{p.desc[lang]}</Text>
             <Text style={styles.pinkText}>{tr("readMore")}</Text>
@@ -1074,7 +1076,11 @@ const welcome = (
       <View style={styles.section}>
         <View style={styles.rowBetween}>
           <Text style={styles.cardTitle}>{tr("audioTitle")}</Text>
-          <Text style={styles.meta}>{place.time}</Text>
+          <Text style={styles.meta}>
+  {matchesSelection && status.duration > 0
+    ? formatTime(status.duration * 1000)
+    : (lang === 'vi' ? 'Thuyết minh audio' : 'Audio guide')}
+</Text>
         </View>
         <View style={styles.player}>
           <Pressable
@@ -1207,7 +1213,9 @@ const welcome = (
   const settings = (
     <>
       <View style={styles.pageHeading}>
-        <Text style={styles.eyebrow}>PREFERENCES</Text>
+        <Text style={styles.eyebrow}>
+  {lang === 'vi' ? 'TUỲ CHỈNH' : 'PREFERENCES'}
+</Text>
         <Text style={styles.title}>{tr("settingsTitle")}</Text>
       </View>
       <View style={styles.section}>
@@ -1300,7 +1308,11 @@ const welcome = (
                 <Text style={styles.miniTitle} numberOfLines={1}>
                   🎧 {playingPlace?.name?.[lang]}
                 </Text>
-                <Text style={styles.miniSub}>Chạm để mở lại bài thuyết minh</Text>
+                <Text style={styles.miniSub}>
+  {lang === 'vi'
+    ? 'Chạm để mở lại bài thuyết minh'
+    : 'Tap to return to the audio guide'}
+</Text>
               </View>
             </Pressable>
           )}
