@@ -21,6 +21,11 @@ import NavigationMap from './components/NavigationMap';
 import { errorMessage } from "./services/apiClient";
 import { readSavedPlaces, savePlaces } from "./services/offlinePlaces";
 import {
+  getDownloadedAudio,
+  downloadAudio,
+  removeDownloadedAudio,
+} from "./services/offlineAudio";
+import {
   words,
   fetchPlacesFromAPI,
   API_BASE_URL,
@@ -92,6 +97,10 @@ export default function App() {
   const [placesError, setPlacesError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
   const [savedContentAt, setSavedContentAt] = useState(null);
+  // Quản lý audio đã tải và trạng thái thao tác tải/xóa.
+const [downloadedAudioUri, setDownloadedAudioUri] = useState(null);
+const [audioDownloadBusy, setAudioDownloadBusy] = useState(false);
+const [audioDownloadError, setAudioDownloadError] = useState('');
   const [userLoc, setUserLoc] = useState(null); // { lat, lng } vị trí thật
   const [locStatus, setLocStatus] = useState("idle"); // idle | loading | ok | denied | error
   const [currentPlace, setCurrentPlace] = useState(0);
@@ -192,7 +201,38 @@ useEffect(() => {
     audioUrl: {},
   };
   const playingPlace = placesList[playingPlaceIndex] || place;
-  
+  // Ghi nhớ lựa chọn hiện tại để tránh hiện kết quả tải nhầm địa danh.
+const audioSelectionRef = useRef(null);
+const audioDownloadLock = useRef(false);
+
+audioSelectionRef.current = JSON.stringify([
+  place.id,
+  lang,
+  place.audioUrl?.[lang] || '',
+]);
+  // Kiểm tra audio đã tải khi đổi địa danh hoặc ngôn ngữ.
+useEffect(() => {
+  let active = true;
+
+  setDownloadedAudioUri(null);
+  setAudioDownloadError('');
+
+  const sourceUrl = place.audioUrl?.[lang];
+
+  if (place.id && sourceUrl) {
+    getDownloadedAudio(place.id, lang, sourceUrl)
+      .then((uri) => {
+        if (active) setDownloadedAudioUri(uri);
+      })
+      .catch(() => {
+        if (active) setDownloadedAudioUri(null);
+      });
+  }
+
+  return () => {
+    active = false;
+  };
+}, [place.id, lang, place.audioUrl?.[lang]]);
   // Audio Player phát nguồn audio của địa danh đang phát
   const player = useAudioPlayer(null, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
@@ -486,6 +526,15 @@ const playAudio = async (targetIndex, start = null) => {
 
   const ended = audioEnded;
   const epoch = ++playbackEpoch.current;
+  // Tìm tệp đã tải đúng địa danh và ngôn ngữ trước khi phát.
+const localAudioUri = await getDownloadedAudio(
+  targetPlace.id,
+  lang,
+  src
+);
+
+// Bỏ kết quả nếu đã có thao tác phát hoặc đổi ngôn ngữ mới.
+if (epoch !== playbackEpoch.current) return;
 
   setAudioError('');
   setAudioEnded(false);
@@ -559,7 +608,9 @@ const playAudio = async (targetIndex, start = null) => {
       }, 15000);
 
       player.replace(null);
-      player.replace(src);
+
+      // Ưu tiên tệp trên máy; nếu chưa tải thì dùng URL online.
+      player.replace(localAudioUri || src);
     } else {
       if (
         start != null ||
@@ -599,7 +650,56 @@ const playAudio = async (targetIndex, start = null) => {
     if (targetIndex === playingPlaceIndex && playingLanguage === lang && player.playing) player.pause();
     else void playAudio(targetIndex);
   };
+// Tải audio của địa danh theo ngôn ngữ đang chọn.
+const onDownloadAudio = async () => {
+  if (audioDownloadLock.current) return;
 
+  const landmarkId = place.id;
+  const selectedLang = lang;
+  const sourceUrl = place.audioUrl?.[selectedLang];
+
+  if (!landmarkId || !sourceUrl) {
+    setAudioDownloadError(
+      selectedLang === 'vi'
+        ? 'Chưa có audio cho ngôn ngữ đang chọn.'
+        : 'No audio available for this language.'
+    );
+    return;
+  }
+
+  const selectionKey = JSON.stringify([
+    landmarkId,
+    selectedLang,
+    sourceUrl,
+  ]);
+
+  audioDownloadLock.current = true;
+  setAudioDownloadBusy(true);
+  setAudioDownloadError('');
+
+  try {
+    const uri = await downloadAudio(
+      landmarkId,
+      selectedLang,
+      sourceUrl
+    );
+
+    if (audioSelectionRef.current === selectionKey) {
+      setDownloadedAudioUri(uri);
+    }
+  } catch {
+    if (audioSelectionRef.current === selectionKey) {
+      setAudioDownloadError(
+        selectedLang === 'vi'
+          ? 'Không tải được audio. Kiểm tra mạng và dung lượng máy rồi thử lại.'
+          : 'Download failed. Check your connection and device storage, then retry.'
+      );
+    }
+  } finally {
+    audioDownloadLock.current = false;
+    setAudioDownloadBusy(false);
+  }
+};
   const welcome = (
     <ScrollView contentContainerStyle={styles.welcomeBody}>
       <ImageBackground
@@ -813,6 +913,7 @@ const playAudio = async (targetIndex, start = null) => {
             onPress={() => toggleAudio(currentPlace)}
             disabled={audioLoading && matchesSelection}
           >
+          
             {audioLoading && matchesSelection ? (
               <ActivityIndicator color="#fff" />
             ) : (
@@ -852,6 +953,36 @@ const playAudio = async (targetIndex, start = null) => {
         </View>
         {audioLoading && matchesSelection ? (
           <Text style={styles.note}>{lang === "vi" ? "Đang tải audio..." : "Loading audio..."}</Text>
+        ) : null}
+                {/* Tải audio của ngôn ngữ đang chọn để nghe ngoại tuyến. */}
+        <Pressable
+          style={styles.secondarySmall}
+          onPress={onDownloadAudio}
+          disabled={
+            audioDownloadBusy ||
+            Boolean(downloadedAudioUri) ||
+            !place.audioUrl?.[lang]
+          }
+        >
+          <Text style={styles.pinkText}>
+            {audioDownloadBusy
+              ? (lang === 'vi'
+                  ? 'Đang tải audio...'
+                  : 'Downloading audio...')
+              : downloadedAudioUri
+                ? (lang === 'vi'
+                    ? '✓ Audio đã tải về máy'
+                    : '✓ Audio downloaded')
+                : (lang === 'vi'
+                    ? '↓ Tải audio để nghe offline'
+                    : '↓ Download audio for offline use')}
+          </Text>
+        </Pressable>
+
+        {audioDownloadError ? (
+          <Text accessibilityRole="alert" style={styles.errorText}>
+            {audioDownloadError}
+          </Text>
         ) : null}
         {audioEnded && matchesSelection ? (
           <Text style={styles.note}>
