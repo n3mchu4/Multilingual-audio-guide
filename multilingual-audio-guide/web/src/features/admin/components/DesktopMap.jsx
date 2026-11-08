@@ -1,169 +1,119 @@
 import { useEffect, useRef, useState } from 'react';
-// Cài bằng: npm i leaflet  (bundle theo app, không còn tải từ unpkg)
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const MAP_STYLES = `/* Chỉ áp dụng cho bản đồ thật, không thay đổi CSS toàn website. */
-.sg-real-map-card .sg-real-map { height: 365px; width: 100%; background: #e9f4f2; z-index: 0; }
-.sg-real-map-card .sg-map-error { padding: 10px; color: #b91c1c; }
-.sg-leaflet-pin-wrap { background: transparent; border: 0; }
-.sg-leaflet-pin { display: block; position: relative; width: 26px; height: 26px; border: 3px solid white; border-radius: 50% 50% 50% 0; background: #167d78; transform: rotate(-45deg); box-shadow: 0 2px 8px #0005; }
-.sg-leaflet-pin.selected { background: #d63384; }
-.sg-leaflet-pin span { display: block; position: absolute; width: 7px; height: 7px; border-radius: 50%; background: white; left: 7px; top: 7px; }
-.sg-real-map-card .leaflet-container { font-family: inherit; }
-.sg-real-map-card img.leaflet-tile { max-width: none !important; max-height: none !important; }
-.sg-real-map-card .leaflet-pane img { max-width: none; }
-.sg-real-map-card .leaflet-container img { display: block; }
-@media (max-width: 900px) { .sg-real-map-card .sg-real-map { height: 290px; } }
-`;
-
 const CENTER = [10.777, 106.701];
-
-// CARTO Voyager: CDN nhanh, có subdomain a-d để tải song song.
-// Nếu muốn dùng lại OSM: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' (bỏ subdomains)
 const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const STYLE = `
+.sg-real-map-card .sg-real-map { height:365px;width:100%;background:#e9f4f2; }
+.sg-real-map-card .leaflet-container { z-index:0;font-family:inherit; }
+.sg-real-map-card img.leaflet-tile {max-width:none!important;max-height:none!important}
+.sg-map-error {color:#b91c1c;font-size:12px;padding:8px}
+.sg-route-pin {width:30px;height:30px;border:3px solid white;border-radius:50%;color:white;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px #0005}
+@media(max-width:900px){.sg-real-map-card .sg-real-map{height:290px}}
+`;
 function coords(place) {
-  const lat = Number(place?.lat ?? place?.latitude);
-  const lng = Number(place?.lng ?? place?.longitude);
-  const hasValues = (place?.lat != null && place?.lng != null) || (place?.latitude != null && place?.longitude != null);
-  return hasValues && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? [lat, lng] : null;
+  const rawLat = place?.lat ?? place?.latitude;
+  const rawLng = place?.lng ?? place?.longitude;
+  if (rawLat == null || rawLng == null || rawLat === '' || rawLng === '') return null;
+  const lat = Number(rawLat), lng = Number(rawLng);
+  return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && !(lat === 0 && lng === 0) ? [lat, lng] : null;
 }
-
-function icon(active) {
-  return L.divIcon({
-    className: 'sg-leaflet-pin-wrap',
-    html: `<span class="sg-leaflet-pin ${active ? 'selected' : ''}"><span></span></span>`,
-    iconSize: [28, 38], iconAnchor: [14, 36], popupAnchor: [0, -32],
-  });
+function routeIcon(label, color) {
+  return L.divIcon({className:'',html:`<div class="sg-route-pin" style="background:${color}">${label}</div>`,iconSize:[30,30],iconAnchor:[15,15]});
 }
+function nameOf(p, lang) { return p?.name?.[lang] || p?.title || p?.title_vi || p?.id || ''; }
 
-export default function DesktopMap({ places = [], lang = 'vi', tr = key => key, currentPlace = 0, openDetail, detail = false }) {
-  const container = useRef(null);
-  const map = useRef(null);
-  const markers = useRef(null);
-  const line = useRef(null);
-  // Giữ giá trị mới nhất qua ref để effect không phải chạy lại khi cha tạo hàm mới mỗi lần render.
-  const openDetailRef = useRef(openDetail);
-  openDetailRef.current = openDetail;
-  const langRef = useRef(lang);
-  langRef.current = lang;
+export default function DesktopMap({places=[],lang='vi',tr=k=>k,currentPlace=0,openDetail,detail=false}) {
+  const container = useRef(null), map = useRef(null), markers = useRef(null), routeLayer = useRef(null);
+  const openDetailRef = useRef(openDetail); openDetailRef.current = openDetail;
+  const [ready,setReady] = useState(false);
+  const [from,setFrom] = useState(0), [to,setTo] = useState(places.length>1?1:0);
+  const [request,setRequest] = useState(null), [status,setStatus] = useState(''), [summary,setSummary] = useState(null);
+  const selectedFrom = Math.min(from,Math.max(places.length-1,0));
+  const selectedTo = Math.min(to,Math.max(places.length-1,0));
 
-  const [error, setError] = useState('');
-  const [from, setFrom] = useState(0);
-  const [to, setTo] = useState(places.length > 2 ? 2 : Math.min(1, places.length - 1));
-  const [route, setRoute] = useState(null);
-  const [ready, setReady] = useState(false);
-  const [fallback, setFallback] = useState(false);
-  const selectedFrom = Math.min(from, Math.max(0, places.length - 1));
-  const selectedTo = Math.min(to, Math.max(0, places.length - 1));
-
-  // Khởi tạo bản đồ (đồng bộ, không còn chờ tải thư viện)
-  useEffect(() => {
-    if (!container.current) return undefined;
-    let cancelled = false;
-
-    const instance = L.map(container.current, {
-      zoomControl: true,
-      preferCanvas: true,
-      minZoom: 12,
-      maxZoom: 19,
-    }).setView(CENTER, 13);
-
-    const baseLayer = L.tileLayer(TILE_URL, {
-  attribution: '&copy; OpenStreetMap contributors',
-  maxZoom: 19,
-  tileSize: 256,
-  keepBuffer: 1,
-  updateWhenIdle: true,
-  updateWhenZooming: false,
-});
-
-    let failedTiles = 0;
-    baseLayer.on('tileerror', () => {
-      failedTiles += 1;
-      setError(langRef.current === 'vi'
-        ? 'Một số ô bản đồ không tải được. Kiểm tra kết nối Internet.'
-        : 'Some map tiles failed to load. Check your connection.');
-    });
-    baseLayer.on('load', () => { failedTiles = 0; setError(''); });
-    baseLayer.addTo(instance);
-
-    map.current = instance;
-    markers.current = L.layerGroup().addTo(instance);
+  useEffect(()=>{
+    const el=container.current;
+    if(!el || map.current) return;
+    const instance=L.map(el,{zoomControl:true,minZoom:12,maxZoom:19}).setView(CENTER,13);
+    map.current=instance;
+    L.tileLayer(TILE_URL,{attribution:'&copy; OpenStreetMap contributors',maxZoom:19,keepBuffer:2}).addTo(instance);
+    markers.current=L.layerGroup().addTo(instance);
+    routeLayer.current=L.layerGroup().addTo(instance);
     setReady(true);
+    const timer=setTimeout(()=>instance.invalidateSize({pan:false}),200);
+    return ()=>{clearTimeout(timer);setReady(false);instance.remove();map.current=null;markers.current=null;routeLayer.current=null;};
+  },[]);
 
-    // Tính lại kích thước khi khung bản đồ ổn định
-    const raf = requestAnimationFrame(() => {
-      if (!cancelled) instance.invalidateSize({ pan: false });
-    });
-    const resizeTimer = setTimeout(() => {
-      if (!cancelled) instance.invalidateSize({ pan: false });
-    }, 250);
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-      clearTimeout(resizeTimer);
-      instance.remove();
-      map.current = null;
-      markers.current = null;
-      line.current = null;
-    };
-  }, []);
-
-  // Vẽ marker (không phụ thuộc openDetail nữa -> không bị vẽ lại vô ích)
-  useEffect(() => {
-    if (!ready || !map.current || !markers.current) return;
+  useEffect(()=>{
+    if(!ready||!markers.current) return;
     markers.current.clearLayers();
-    places.forEach((place, index) => {
-      const point = coords(place);
-      if (!point) return;
-      const marker = L.marker(point, { icon: icon(index === currentPlace) });
-      marker.bindTooltip(place.name?.[lang] || place.title || place.id || '', { direction: 'top' });
-      marker.on('click', () => openDetailRef.current?.(index));
+    places.forEach((p,i)=>{
+      const point=coords(p); if(!point) return;
+      const marker=L.marker(point,{icon:routeIcon('•',i===currentPlace?'#d63384':'#e05252')});
+      marker.bindTooltip(nameOf(p,lang),{direction:'top'});
+      marker.on('click',()=>openDetailRef.current?.(i));
       markers.current.addLayer(marker);
     });
-  }, [places, lang, currentPlace, ready]);
+  },[ready,places,lang,currentPlace]);
 
-  // Đường nối tham khảo giữa 2 địa danh
-  useEffect(() => {
-    if (!ready || !map.current) return;
-    if (line.current) { map.current.removeLayer(line.current); line.current = null; }
-    if (!route || route[0] === route[1]) return;
-    const a = coords(places[route[0]]);
-    const b = coords(places[route[1]]);
-    if (!a || !b) return;
-    // Đường nối vị trí tham khảo, không phải chỉ đường theo đường giao thông.
-    line.current = L.polyline([a, b], { color: '#d63384', weight: 4, dashArray: '8 7' }).addTo(map.current);
-    map.current.fitBounds(line.current.getBounds().pad(0.35), { maxZoom: 16 });
-  }, [route, places, ready]);
+  useEffect(()=>{
+    if(!ready||!map.current||!routeLayer.current||!request) return;
+    const layer=routeLayer.current;
+    layer.clearLayers();
+    const a=places[request.from],b=places[request.to];
+    const start=coords(a),end=coords(b);
+    setSummary(null);
+    if(request.from===request.to){setStatus(lang==='vi'?'Hãy chọn hai địa danh khác nhau.':'Choose different landmarks.');return;}
+    if(!start||!end){setStatus(lang==='vi'?`Thiếu tọa độ hợp lệ: ${!start?nameOf(a,lang):nameOf(b,lang)}. Các marker hiện có vẫn được giữ.`:'Missing valid landmark coordinates.');return;}
+    const controller=new AbortController();
+    setStatus(lang==='vi'?'Đang tìm đường xe chạy...':'Finding driving route...');
+    const url=`https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson&steps=false`;
+    fetch(url,{signal:controller.signal}).then(async res=>{
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }).then(data=>{
+      if(controller.signal.aborted) return;
+      if(data.code!=='Ok'||!data.routes?.[0]?.geometry?.coordinates?.length) throw new Error('No route');
+      const result=data.routes[0];
+      const points=result.geometry.coordinates.map(([lng,lat])=>[lat,lng]);
+      L.polyline(points,{color:'#d63384',weight:5,opacity:0.9}).addTo(layer);
+      L.marker(start,{icon:routeIcon('A','#16a34a')}).bindPopup(nameOf(a,lang)).addTo(layer);
+      L.marker(end,{icon:routeIcon('B','#dc2626')}).bindPopup(nameOf(b,lang)).addTo(layer);
+      map.current?.invalidateSize({pan:false});
+      map.current?.fitBounds(L.latLngBounds(points),{padding:[30,30],maxZoom:16});
+      setSummary({km:(result.distance/1000).toFixed(1),minutes:Math.round(result.duration/60)});
+      setStatus('');
+    }).catch(err=>{
+      if(controller.signal.aborted) return;
+      setStatus(lang==='vi'?'Không lấy được đường xe chạy từ OSRM. Vui lòng thử lại.':'Could not load driving route. Please retry.');
+    });
+    return ()=>controller.abort();
+  },[request,ready,places,lang]);
 
   return <>
-    <style>{MAP_STYLES}</style>
+    <style>{STYLE}</style>
     <div className="map-card sg-real-map-card">
-      <div className="map-top"><h3>{tr('mapTitle')}</h3><span>{lang === 'vi' ? 'Bản đồ địa danh Quận 1' : 'District 1 landmarks'}</span></div>
-      <div style={{ position: 'relative', height: 365 }}>
-        <div className="sg-real-map" ref={container} role="application" aria-label={lang === 'vi' ? 'Bản đồ địa danh' : 'Landmark map'} style={{ display: fallback ? 'none' : 'block' }} />
-        {fallback && <div style={{ height: '100%', overflow: 'auto', padding: 16, background: '#e9f4f2' }}>
-          <strong>{lang === 'vi' ? 'Danh sách địa danh Quận 1' : 'District 1 landmarks'}</strong>
-          <p style={{ fontSize: 12 }}>{lang === 'vi' ? 'Không tải được bản đồ trực tuyến. Bạn vẫn có thể chọn địa danh bên dưới.' : 'Online map unavailable. You can still select a landmark below.'}</p>
-          {places.map((p, i) => <button key={p.id || i} type="button" onClick={() => openDetail?.(i)} style={{ display: 'block', width: '100%', padding: 10, marginBottom: 6, border: '1px solid #b5d7d2', borderRadius: 8, background: 'white', textAlign: 'left', cursor: 'pointer' }}>{i + 1}. {p.name?.[lang] || p.id}</button>)}
-        </div>}
-      </div>
-      {error && <p className="sg-map-error" role="alert">{error}</p>}
-      {!detail && <div className="map-legend"><span><i className="legend-dot" />{tr('mapLegend')}</span></div>}
+      <div className="map-top"><h3>{tr('mapTitle')}</h3><span>{lang==='vi'?'Bản đồ địa danh Quận 1':'District 1 landmarks'}</span></div>
+      <div className="sg-real-map" ref={container} role="application" aria-label={lang==='vi'?'Bản đồ địa danh':'Landmark map'} />
+      {!detail&&<div className="map-legend"><span><i className="legend-dot"/>{tr('mapLegend')}</span></div>}
     </div>
     <div className="route-card">
       <h3>{tr('routeTitle')}</h3>
-      <select className="route-input" aria-label={tr('routeFrom')} value={selectedFrom} onChange={e => { const n = Number(e.target.value); setFrom(n); setRoute([n, selectedTo]); }}>
-        {places.map((p, i) => <option key={p.id} value={i}>{p.name?.[lang] || p.id}</option>)}
+      <select className="route-input" aria-label={tr('routeFrom')} value={selectedFrom} onChange={e=>setFrom(Number(e.target.value))}>
+        {places.map((p,i)=><option key={p.id||i} value={i}>{nameOf(p,lang)}</option>)}
       </select>
-      <select className="route-input" aria-label={tr('routeTo')} value={selectedTo} onChange={e => { const n = Number(e.target.value); setTo(n); setRoute([selectedFrom, n]); }}>
-        {places.map((p, i) => <option key={p.id} value={i}>{p.name?.[lang] || p.id}</option>)}
+      <select className="route-input" aria-label={tr('routeTo')} value={selectedTo} onChange={e=>setTo(Number(e.target.value))}>
+        {places.map((p,i)=><option key={p.id||i} value={i}>{nameOf(p,lang)}</option>)}
       </select>
-      <button type="button" className="primary-btn" style={{ width: '100%', padding: 11 }} onClick={() => setRoute([selectedFrom, selectedTo])}>{tr('routeBtn')}</button>
-      {route && <div className="route-result">{route[0] === route[1] ? tr('routeSame') : <><strong>↗ {tr('routeResultTitle')}</strong>{places[route[0]]?.name?.[lang]} → {places[route[1]]?.name?.[lang]}<p>{lang === 'vi' ? 'Đường nối vị trí tham khảo, không phải lộ trình giao thông.' : 'Straight-line reference, not road directions.'}</p></>}</div>}
-      <div style={{ fontSize: 10, color: '#8b969a', lineHeight: 1.6, marginTop: 10 }}>{tr('routeNote')}</div>
+      <button type="button" className="primary-btn" style={{width:'100%',padding:11}} disabled={places.length<2} onClick={()=>setRequest({from:selectedFrom,to:selectedTo,nonce:Date.now()})}>{tr('routeBtn')}</button>
+      {status&&<p className="sg-map-error" role="status">{status}</p>}
+      {request&&<div className="route-result"><strong>↗ {tr('routeResultTitle')}</strong><div>{nameOf(places[request.from],lang)} → {nameOf(places[request.to],lang)}</div>
+        {summary&&<p>{summary.km} km · {summary.minutes} {lang==='vi'?'phút (ước tính, không tính kẹt xe)':'min (estimated, no live traffic)'}</p>}
+        <p>{lang==='vi'?'Tuyến đường ô tô tham khảo theo mạng đường giao thông, không phải chỉ dẫn thời gian thực.':'Reference car route, not live navigation.'}</p>
+      </div>}
+      <div style={{fontSize:10,color:'#8b969a',lineHeight:1.6,marginTop:10}}>{lang==='vi'?'Tuyến đường ô tô tham khảo. Kiểm tra biển báo và quy định giao thông thực tế.':'Reference car route. Follow actual traffic rules.'}</div>
     </div>
   </>;
 }
