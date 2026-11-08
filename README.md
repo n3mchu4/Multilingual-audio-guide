@@ -8,7 +8,8 @@
 - [Công nghệ](#công-nghệ)
 - [Cấu trúc repository](#cấu-trúc-repository)
 - [Cài đặt và chạy web](#cài-đặt-và-chạy-web)
-- [Chạy mobile](#chạy-mobile)
+- [Chạy mobile với API Render của nhóm](#chạy-mobile-với-api-render-của-nhóm)
+- [Chạy mobile với API local](#chạy-mobile-với-api-local)
 - [Audio, ảnh và transcript](#audio-ảnh-và-transcript)
 - [Thống kê hoạt động](#thống-kê-hoạt-động)
 - [API chính](#api-chính)
@@ -230,7 +231,31 @@ Vite proxy `/api` và `/media` đến `http://127.0.0.1:3002`. Nếu thay cổng
 
 Để mở web bằng điện thoại, kết nối cùng mạng với máy chạy dự án và quét QR mà Vite in ra. Đây là QR mở **website qua LAN**, không phải QR cài đặt ứng dụng mobile. Nếu IP được chọn sai do VPN/card mạng ảo, dùng địa chỉ IPv4 LAN phù hợp.
 
-## Chạy mobile
+## Chạy mobile với API Render của nhóm
+
+Cả nhóm dùng chung API `saigon-guide-api` và PostgreSQL đã triển khai trên Render. Người phụ trách triển khai quản lý dịch vụ, database và biến môi trường phía server. Thành viên chạy app chỉ cần URL HTTPS công khai. Cấu hình mobile không cần tài khoản Render, mật khẩu PostgreSQL hay `AUTH_SECRET`.
+
+1. Clone repo nếu chưa có, hoặc cập nhật bản clone hiện tại. Mở terminal trong thư mục con `multilingual-audio-guide/` có thư mục `mobile/`.
+2. Cài dependency và tạo `mobile/.env` nếu chưa có file.
+
+   ```powershell
+   npm --prefix mobile install
+   if (-not (Test-Path mobile/.env)) { Copy-Item mobile/.env.example mobile/.env }
+   ```
+
+3. Đặt dòng sau trong `mobile/.env`. Dùng URL gốc của API, không thêm `/api` hay `/api/health`.
+
+   ```dotenv
+   EXPO_PUBLIC_GUIDE_API_URL=https://saigon-guide-api.onrender.com
+   ```
+
+4. Chạy `npm run dev:mobile` rồi quét QR để mở dự án bằng Expo Go tương thích. Khi dùng QR qua LAN, kết nối điện thoại và máy tính vào cùng Wi-Fi để điện thoại tải mã từ Expo. App gọi API Render qua Internet. Khởi động lại Expo sau khi sửa `.env`.
+
+Mở [health check](https://saigon-guide-api.onrender.com/api/health) để kiểm tra phản hồi `{"ok":true}` và [danh sách địa danh](https://saigon-guide-api.onrender.com/api/landmarks?lang=vi) để kiểm tra dữ liệu. Render Free có thể mất thời gian khởi động sau khi không có truy cập. Nếu health check vẫn lỗi trên nhiều thiết bị, báo người phụ trách kiểm tra dịch vụ. [Tài liệu Render Free](https://render.com/docs/free)
+
+Thành viên chỉ cài bản APK do nhóm cung cấp có thể dùng trực tiếp URL API đã được cấu hình lúc build. Mục [Chạy mobile với API local](#chạy-mobile-với-api-local) dành cho phát triển cùng backend trên máy.
+
+## Chạy mobile với API local
 
 Từ thư mục làm việc chính:
 
