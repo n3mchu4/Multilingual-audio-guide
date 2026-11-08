@@ -42,8 +42,22 @@ export default function DesktopMap({places=[],lang='vi',tr=k=>k,currentPlace=0,o
     markers.current=L.layerGroup().addTo(instance);
     routeLayer.current=L.layerGroup().addTo(instance);
     setReady(true);
+    const resizeObserver = new ResizeObserver(() => {
+    instance.invalidateSize({
+        pan: false,
+        debounceMoveend: true,
+      });
+    });
+    resizeObserver.observe(el);
     const timer=setTimeout(()=>instance.invalidateSize({pan:false}),200);
-    return ()=>{clearTimeout(timer);setReady(false);instance.remove();map.current=null;markers.current=null;routeLayer.current=null;};
+    return () => {
+    resizeObserver.disconnect();
+    clearTimeout(timer);
+    instance.remove();
+    map.current = null;
+    markers.current = null;
+    routeLayer.current = null;
+  };;
   },[]);
 
   useEffect(()=>{
