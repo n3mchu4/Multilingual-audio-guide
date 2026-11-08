@@ -252,7 +252,7 @@ export default function UserWebPage() {
               onClick={() => enterApp()}
               type="button"
             >
-              <span>{tr("continueBtn", "Tiếp tục")}</span>
+              <span>{words[welcomeLang].continueBtn}</span>
               <span aria-hidden="true">{"→"}</span>
             </button>
             <div className="welcome-note">

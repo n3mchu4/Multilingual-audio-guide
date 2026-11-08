@@ -918,7 +918,7 @@ const welcome = (
             showPage("home");
           }}
         >
-          <Text style={styles.primaryText}>{tr("continueBtn")} →</Text>
+          <Text style={styles.primaryText}>{words[welcomeLang].continueBtn} →</Text>
         </Pressable>
       </View>
     </ScrollView>
