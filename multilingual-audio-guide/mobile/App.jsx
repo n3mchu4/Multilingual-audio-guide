@@ -965,15 +965,18 @@ const welcome = (
             ))}
           </ScrollView>
         )}
-        <NavigationMap
-  placesList={placesList}
-  lang={lang}
-  selected={selected}
-  onSelect={choosePin}
-  userLoc={userLoc}
-  locStatus={locStatus}
-  onMyLocation={onMyLocation}
-/>
+        {!(Platform.OS === "android" &&
+  process.env.EXPO_PUBLIC_HIDE_ANDROID_MAP === "true") && (
+  <NavigationMap
+    placesList={placesList}
+    lang={lang}
+    selected={selected}
+    onSelect={choosePin}
+    userLoc={userLoc}
+    locStatus={locStatus}
+    onMyLocation={onMyLocation}
+  />
+)}
         
         {selected != null && (
           <View style={styles.actionPanel}>
