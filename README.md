@@ -9,6 +9,7 @@
 - [Cấu trúc repository](#cấu-trúc-repository)
 - [Cài đặt và chạy web](#cài-đặt-và-chạy-web)
 - [Chạy mobile với API Render của nhóm](#chạy-mobile-với-api-render-của-nhóm)
+- [Cài APK Android và dùng offline](#cài-apk-android-và-dùng-offline)
 - [Chạy mobile với API local](#chạy-mobile-với-api-local)
 - [Audio, ảnh và transcript](#audio-ảnh-và-transcript)
 - [Thống kê hoạt động](#thống-kê-hoạt-động)
@@ -254,6 +255,22 @@ Cả nhóm dùng chung API `saigon-guide-api` và PostgreSQL đã triển khai t
 Mở [health check](https://saigon-guide-api.onrender.com/api/health) để kiểm tra phản hồi `{"ok":true}` và [danh sách địa danh](https://saigon-guide-api.onrender.com/api/landmarks?lang=vi) để kiểm tra dữ liệu. Render Free có thể mất thời gian khởi động sau khi không có truy cập. Nếu health check vẫn lỗi trên nhiều thiết bị, báo người phụ trách kiểm tra dịch vụ. [Tài liệu Render Free](https://render.com/docs/free)
 
 Thành viên chỉ cài bản APK do nhóm cung cấp có thể dùng trực tiếp URL API đã được cấu hình lúc build. Mục [Chạy mobile với API local](#chạy-mobile-với-api-local) dành cho phát triển cùng backend trên máy.
+
+## Cài APK Android và dùng offline
+
+1. Dùng camera Android quét QR cài đặt mà nhóm chia sẻ, hoặc mở link cài đặt EAS tương ứng. Trên trang Expo, tải file APK rồi mở file đã tải để cài **Saigon Guide**.
+2. Mở app khi còn kết nối Internet. Tải trước nội dung và audio của địa danh muốn dùng offline, rồi đợi tải xong.
+3. Khi mất mạng, mở app đã cài để xem và nghe nội dung đã lưu trên thiết bị.
+
+QR của bản build có thể lưu và chia sẻ lại trong thời gian bản build còn khả dụng trên Expo. Người cài APK có thể dùng Wi-Fi hoặc dữ liệu di động để tải, và chạy app trực tiếp trên Android. [Hướng dẫn cài đặt từ Expo](https://docs.expo.dev/tutorial/eas/internal-distribution-builds/)
+
+Người phụ trách build có thể chạy lệnh sau từ thư mục `multilingual-audio-guide/mobile/` sau khi đã cấu hình profile `preview` và quyền truy cập dự án EAS.
+
+```powershell
+npx eas-cli@latest build --platform android --profile preview
+```
+
+Khi EAS báo `Build finished`, lưu QR hoặc link cài đặt của bản build. Cập nhật QR và link chia sẻ khi phát hành bản APK mới. Bản `preview` hiện ẩn bản đồ nhúng trên Android. Người dùng vẫn có thể chọn địa danh và mở chỉ đường bằng Google Maps.
 
 ## Chạy mobile với API local
 
