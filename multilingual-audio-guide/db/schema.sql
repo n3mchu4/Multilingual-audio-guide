@@ -250,3 +250,22 @@ WHERE landmark_id = 'notre-dame-cathedral';
 UPDATE public.landmarks
 SET latitude = 10.7764, longitude = 106.7030
 WHERE landmark_id = 'saigon-opera-house';
+-- tạo bảng device_sessions
+
+CREATE TABLE IF NOT EXISTS public.device_sessions (
+    session_id VARCHAR(100) PRIMARY KEY,
+    visitor_id VARCHAR(100) NOT NULL,
+    platform VARCHAR(20) NOT NULL,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    ended_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_device_sessions_last_seen
+ON public.device_sessions(last_seen_at);
+-- cấp quyền nếu xác nhận backend dùng guide_app
+GRANT USAGE ON SCHEMA public TO guide_app;
+
+GRANT SELECT, INSERT, UPDATE
+ON public.device_sessions
+TO guide_app;
