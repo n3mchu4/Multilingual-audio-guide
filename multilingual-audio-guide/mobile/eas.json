@@ -1,0 +1,28 @@
+{
+  "cli": {
+    "version": ">= 27.5.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+  "distribution": "internal",
+  "android": {
+    "buildType": "apk"
+  },
+  "env": {
+  "EXPO_PUBLIC_GUIDE_API_URL": "https://saigon-guide-api.onrender.com",
+  "EXPO_PUBLIC_HIDE_ANDROID_MAP": "true"
+}
+},
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

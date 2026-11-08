@@ -12,17 +12,27 @@
       }
     },
     "android": {
+      "package": "com.hthuonq.saigonguide",
       "adaptiveIcon": {
         "backgroundColor": "#167d78"
       },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "plugins": [
       "expo-audio",
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "87f6892f-15f7-40d7-bb0c-e50711495ca0"
+      }
+    }
   }
 }
