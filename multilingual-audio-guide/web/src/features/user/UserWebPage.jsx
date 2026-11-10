@@ -441,7 +441,7 @@ export default function UserWebPage() {
                   onClick={() => setLanguage("vi")}
                   type="button"
                 >
-                  {tr("selectLanguage", "Sử dụng")}
+                  {lang === "vi" ? "Dùng tiếng Việt" : "Use Vietnamese"}
                 </button>
               </div>
               <div className="setting-row">
@@ -455,7 +455,7 @@ export default function UserWebPage() {
                   onClick={() => setLanguage("en")}
                   type="button"
                 >
-                  {tr("selectLanguage", "Use English")}
+                 {lang === "vi" ? "Dùng tiếng Anh" : "Use English"}
                 </button>
               </div>
             </div>
