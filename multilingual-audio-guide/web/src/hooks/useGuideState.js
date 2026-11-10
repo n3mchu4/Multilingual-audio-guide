@@ -43,16 +43,39 @@ export function useGuideState(
       )
     : -1;
 
-  const audioFile = places[currentPlace]?.audioFile;
-  const audioSrc = audioFile?.[lang] || "";
+const [playingPlaceId, setPlayingPlaceId] = useState(null);
+const playingPlaceIndex = places.findIndex((place) => place.id === playingPlaceId);
+const viewedPlace = places[currentPlace];
 
-  const audio = useAudioPlayer(
-    audioSrc,
-    () => onPlaybackStarted?.({
-      landmarkId: places[currentPlace]?.id,
-      language: lang,
-    })
-  );
+const audio = useAudioPlayer("", () => {
+  if (playingPlaceId != null) {
+    onPlaybackStarted?.({ landmarkId: playingPlaceId, language: lang });
+  }
+});
+
+const isPlayingPlace = playingPlaceId != null && viewedPlace?.id === playingPlaceId;
+const detailAudio = isPlayingPlace
+  ? audio
+  : {
+      ...audio,
+      playing: false,
+      elapsed: 0,
+      duration: 0,
+      progress: 0,
+      loading: false,
+      ended: false,
+      error: "",
+      toggle: () => {
+        const src = viewedPlace?.audioFile?.[lang];
+        if (!src) return;
+
+        const landmarkId = viewedPlace.id;
+        setPlayingPlaceId(landmarkId);
+        void audio.playSource(src, () => {
+          onPlaybackStarted?.({ landmarkId, language: lang });
+        });
+      },
+    };
 
   const tr = (key, fallback = key) =>
     words[lang]?.[key] ?? words.vi?.[key] ?? fallback;
@@ -70,7 +93,10 @@ export function useGuideState(
     setLang(next);
     setWelcomeLang(next);
     saveLanguage(next);
-    audio.reset();
+    if (next !== lang) {
+      audio.reset();
+      setPlayingPlaceId(null);
+}
   };
 
   const openDetail = (index) => {
@@ -80,7 +106,7 @@ export function useGuideState(
       index >= places.length
     ) return;
 
-    if (index !== currentPlace) audio.reset();
+   
 
     setCurrentPlace(index);
     setEntered(true);
@@ -126,6 +152,8 @@ export function useGuideState(
     openDetail,
     enterApp,
     audio,
+    detailAudio,
+    playingPlaceIndex,
     routeIndex,
   };
 }

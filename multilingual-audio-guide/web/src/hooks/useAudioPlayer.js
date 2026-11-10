@@ -16,6 +16,7 @@ export function useAudioPlayer(src, onPlay) {
   const [error, setError] = useState("");
   const [source, setSource] = useState(src);
   const audioRef = useRef(null);
+  const playbackAttemptRef = useRef(0);
   const sessionStartedRef = useRef(false);
   const onPlayRef = useRef(onPlay);
   useEffect(() => { onPlayRef.current = onPlay; }, [onPlay]);
@@ -90,31 +91,38 @@ export function useAudioPlayer(src, onPlay) {
     };
   }, [src]);
 
-  const play = () => {
-    if (!src || !audioRef.current) return Promise.resolve();
-    setError("");
-    const audio = audioRef.current;
-    if (audio.ended) audio.currentTime = 0; // phát lại từ đầu sau khi kết thúc
-    setEnded(false);
-    if (audio.readyState < 3) setLoading(true);
-    return audio.play()
-      .then(() => {
-        if (audioRef.current !== audio) return;
-        setPlaying(true);
-        if (!sessionStartedRef.current) {
-          sessionStartedRef.current = true;
-          onPlayRef.current?.();
-        }
-      })
-      .catch(() => {
-        if (audioRef.current !== audio) return;
-        setPlaying(false);
-        setLoading(false);
-        setError(LOAD_ERROR_MESSAGE);
-      });
-  };
+  const play = (onStarted) => {
+  const audio = audioRef.current;
+  if (!audio?.getAttribute("src")) return Promise.resolve();
+
+  const attempt = ++playbackAttemptRef.current;
+  setError("");
+  if (audio.ended) audio.currentTime = 0;
+  setEnded(false);
+  if (audio.readyState < 3) setLoading(true);
+
+  return audio.play()
+    .then(() => {
+      if (audioRef.current !== audio || playbackAttemptRef.current !== attempt) return;
+
+      setPlaying(true);
+      if (!sessionStartedRef.current) {
+        sessionStartedRef.current = true;
+        const notify = onStarted ?? onPlayRef.current;
+        notify?.();
+      }
+    })
+    .catch(() => {
+      if (audioRef.current !== audio || playbackAttemptRef.current !== attempt) return;
+
+      setPlaying(false);
+      setLoading(false);
+      setError(LOAD_ERROR_MESSAGE);
+    });
+};
 
   const pause = () => {
+    playbackAttemptRef.current += 1;
     if (!audioRef.current) return;
     audioRef.current.pause();
     setPlaying(false);
@@ -129,6 +137,7 @@ export function useAudioPlayer(src, onPlay) {
   };
 
   const reset = () => {
+    playbackAttemptRef.current += 1;
     sessionStartedRef.current = false;
     if (!audioRef.current) return;
     audioRef.current.pause();
@@ -140,6 +149,16 @@ export function useAudioPlayer(src, onPlay) {
     setProgress(0);
     setError("");
   };
+
+  const playSource = (nextSrc, onStarted) => {
+  const audio = audioRef.current;
+  if (!audio || !nextSrc) return Promise.resolve();
+
+  reset();
+  setDuration(0);
+  audio.src = nextSrc;
+  return play(onStarted);
+};
 
   const seek = (time, autoPlay = true) => {
     if (!audioRef.current) return;
@@ -171,7 +190,7 @@ export function useAudioPlayer(src, onPlay) {
 
   // W13: thử tải lại audio khi lỗi.
   const retry = () => {
-    if (!src || !audioRef.current) return Promise.resolve();
+    if (!audioRef.current?.getAttribute("src")) return Promise.resolve();
     setError("");
     setLoading(true);
     audioRef.current.load();
@@ -188,6 +207,7 @@ export function useAudioPlayer(src, onPlay) {
     ended: matchesSource && ended,
     error: matchesSource ? error : "",
     play,
+    playSource,
     pause,
     toggle,
     reset,

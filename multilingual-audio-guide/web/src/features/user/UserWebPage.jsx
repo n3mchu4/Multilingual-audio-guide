@@ -128,6 +128,8 @@ export default function UserWebPage() {
     openDetail: openDetailState,
     enterApp,
     audio,
+    detailAudio,
+    playingPlaceIndex,
     routeIndex,
   } = useGuideState(words, places, recordAudioListen, routePlaceId);
 
@@ -383,7 +385,7 @@ export default function UserWebPage() {
               <DetailContent
                 {...contentProps}
                 place={places[currentPlace]}
-                audio={audio}
+                audio={detailAudio}
                 showPage={showPage}
               />
             </section>
@@ -479,12 +481,14 @@ export default function UserWebPage() {
             </div>
           </div>
         </main>
-        <MiniAudioPlayer
-          place={places[currentPlace]}
-          lang={lang}
-          audio={audio}
-          showPage={showPage}
-        />
+       {playingPlaceIndex >= 0 && (
+  <MiniAudioPlayer
+    place={places[playingPlaceIndex]}
+    lang={lang}
+    audio={audio}
+    showPage={() => openDetail(playingPlaceIndex)}
+  />
+)}
         <div className="footer">
           {
             "SAIGON GUIDE · QUẬN 1, TP. HỒ CHÍ MINH"
