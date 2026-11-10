@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getProposalLanguageError } from "@shared/utils/proposalLanguages.js";
 import { managerRequest } from "../../services/api";
 import { useAppStore } from "../../store/useAppStore";
 import "./styles/ManagerPortal.css";
@@ -237,9 +238,13 @@ export default function ManagerPage() {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
+  const languageError = workspace
+    ? getProposalLanguageError(form, workspace.current)
+    : "";
+
   const submit = async (event) => {
     event.preventDefault();
-    if (uploading || saving || workspace?.pending) return;
+    if (uploading || saving || workspace?.pending || languageError) return;
     setError("");
     setMessage("");
     setSaving(true);
@@ -719,6 +724,12 @@ export default function ManagerPage() {
                       <span>
                         Khi đổi lời thuyết minh, cần cung cấp cả hai bản audio.
                       </span>
+                      {languageError && (
+                        <>
+                          <br />
+                          <span role="status">{languageError}</span>
+                        </>
+                      )}
                     </p>
                     <div>
                       <button
@@ -739,7 +750,7 @@ export default function ManagerPage() {
                       <button
                         className="manager-button primary"
                         type="submit"
-                        disabled={locked}
+                        disabled={locked || Boolean(languageError)}
                       >
                         {saving ? "Đang gửi..." : "Gửi đề xuất"}
                         <Icon name="arrow" />
