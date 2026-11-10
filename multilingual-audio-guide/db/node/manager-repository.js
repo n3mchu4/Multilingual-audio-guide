@@ -1,4 +1,5 @@
 import { pool, query } from './database.js';
+import { getProposalLanguageError } from '../../shared/utils/proposalLanguages.js';
 
 function invalid(message) {
   throw Object.assign(new Error(message), { status: 400 });
@@ -157,6 +158,9 @@ export async function submitManagerProposal(managerId, input) {
 
     const values = proposalValues(input);
     const current = landmarkResult.rows[0];
+    const languageError = getProposalLanguageError(values, mapLandmark(current, []));
+    if (languageError) invalid(languageError);
+
     if ((values.transcriptVi !== current.transcript_vi
       || values.transcriptEn !== current.transcript_en)
       && (!values.audioViUrl || !values.audioEnUrl)) {
