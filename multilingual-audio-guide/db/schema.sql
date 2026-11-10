@@ -230,7 +230,7 @@ DROP TRIGGER IF EXISTS landmarks_invalidate_cues ON public.landmarks;
 CREATE TRIGGER landmarks_invalidate_cues BEFORE UPDATE ON public.landmarks
   FOR EACH ROW EXECUTE FUNCTION public.invalidate_transcript_cues();
 COMMIT;
---update tọa dộ 
+--update tọa dộ địa danh
 UPDATE public.landmarks
 SET latitude = 10.7722, longitude = 106.6980
 WHERE landmark_id = 'ben-thanh-market';
@@ -250,6 +250,17 @@ WHERE landmark_id = 'notre-dame-cathedral';
 UPDATE public.landmarks
 SET latitude = 10.7764, longitude = 106.7030
 WHERE landmark_id = 'saigon-opera-house';
+
+UPDATE public.landmarks
+SET latitude = 10.773200, longitude = 106.706800
+WHERE landmark_id = 'bach-dang-wharf'
+  AND latitude IS NULL AND longitude IS NULL;
+
+UPDATE public.landmarks
+SET latitude = 10.780030, longitude = 106.699660
+WHERE landmark_id = 'nguyen-van-binh-book-street'
+  AND latitude IS NULL AND longitude IS NULL;
+
 -- tạo bảng device_sessions
 
 CREATE TABLE IF NOT EXISTS public.device_sessions (
