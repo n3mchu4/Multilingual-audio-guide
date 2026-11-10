@@ -105,14 +105,6 @@ export default function Dashboard() {
           <strong>{stats.visitors == null ? '—' : stats.visitors.toLocaleString('vi-VN')}</strong>
           <span className="label">Người dùng đã truy cập</span>
         </div>
-        <div className="stat">
-          <div className="stat-top">
-            <div className="stat-icon">♫</div>
-            <span className="trend">Audio phát thành công</span>
-          </div>
-          <strong>{stats.listens == null ? '—' : stats.listens.toLocaleString('vi-VN')}</strong>
-          <span className="label">Lượt nghe audio</span>
-        </div>
       </div>
       {(stats.visitors == null || stats.listens == null) && (
         <p className="analytics-setup-note" role="status">
