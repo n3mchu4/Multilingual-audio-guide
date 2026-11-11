@@ -11,8 +11,7 @@ function hasCoordinates(place) {
     Math.abs(place.lng) <= 180
   );
 }
-
-export default function NavigationMap({ placesList, lang, selected, onSelect }) {
+export default function NavigationMap({ placesList, lang, selected, onSelect, userLoc }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef(null);
@@ -91,6 +90,23 @@ L.marker([place.lat, place.lng], {
   .addTo(markers);
     });
   }, [placesList, lang, selected, onSelect]);
+    useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !hasCoordinates(userLoc)) return;
+
+    const position = [userLoc.lat, userLoc.lng];
+    const dot = L.circleMarker(position, {
+      radius: 8,
+      color: '#fff',
+      weight: 2,
+      fillColor: '#2563eb',
+      fillOpacity: 1,
+      interactive: false,
+    }).addTo(map);
+
+    map.setView(position, 15);
+    return () => dot.remove();
+  }, [userLoc]);
 
   return <div ref={containerRef} style={{ width: '100%', height: 320 }} />;
 }
