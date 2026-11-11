@@ -23,11 +23,17 @@ export default function NavigationMap({ placesList, lang, selected, onSelect }) 
   zoomControl: false,
 }).setView([10.777, 106.701], 14);
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+    const mapTilerKey = process.env.EXPO_PUBLIC_MAPTILER_KEY;
+
+L.tileLayer(
+  `https://api.maptiler.com/maps/streets-v4/{z}/{x}/{y}.png?key=${mapTilerKey}`,
+  {
+    maxZoom: 19,
+    attribution:
+      '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> ' +
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+  },
+).addTo(map);
 
     mapRef.current = map;
     markersRef.current = L.layerGroup().addTo(map);
