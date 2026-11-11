@@ -3,15 +3,13 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const CENTER = [10.777, 106.701];
-// Different HTTPS tile providers help when Safari or a mobile network blocks one host.
+// OpenStreetMap tiles do not require a CARTO API key.
 const TILE_SOURCES = [
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  'https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-  'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 ];
 const STYLE = `
 .sg-real-map-card .sg-map-shell{position:relative}
-.sg-real-map-card .sg-real-map{height:365px;width:100%;background:#e9f4f2;z-index:0}
+.sg-real-map-card .sg-real-map{height:365px;width:100%;background:#e9f4f2;z-index:0;min-height:300px}
 .sg-real-map-card .leaflet-container{font-family:inherit}
 .sg-real-map-card img.leaflet-tile{max-width:none!important;max-height:none!important}
 .sg-real-map-card .sg-gps-floating{position:absolute;right:12px;bottom:20px;z-index:500;border:1px solid #d9e4e6;border-radius:12px;padding:11px;background:white;color:#167d78;font-weight:800;box-shadow:0 3px 12px #0003;min-height:44px;cursor:pointer}
@@ -41,7 +39,7 @@ function mapsLink(destination,origin){
 }
 export default function DesktopMap({places=[],lang='vi',tr=k=>k,currentPlace=0,openDetail,detail=false}){
   const el=useRef(null),map=useRef(null),markers=useRef(null),routeLayer=useRef(null),gpsLayer=useRef(null);
-  const tileLayer=useRef(null),tileIndex=useRef(0),tileFailures=useRef(0),watchId=useRef(null),openDetailRef=useRef(openDetail);
+  const tileLayer=useRef(null),tileIndex=useRef(0),tileFailures=useRef(0),openDetailRef=useRef(openDetail);
   openDetailRef.current=openDetail;
   const [ready,setReady]=useState(false),[tileError,setTileError]=useState(false);
   const [gps,setGps]=useState(null),[gpsStatus,setGpsStatus]=useState('idle');
@@ -50,24 +48,33 @@ export default function DesktopMap({places=[],lang='vi',tr=k=>k,currentPlace=0,o
   const vi=lang==='vi';
   const selectedFrom=Math.min(from,Math.max(places.length-1,0)),selectedTo=Math.min(to,Math.max(places.length-1,0));
   const selectTiles=(instance,index)=>{
-    tileLayer.current?.remove();
+    const oldLayer=tileLayer.current;
     tileIndex.current=index;
     tileFailures.current=0;
-    setTileError(false);
     const layer=L.tileLayer(TILE_SOURCES[index],{
-      attribution:index===2?'&copy; OpenStreetMap contributors &copy; CARTO':'&copy; OpenStreetMap contributors',
-      maxZoom:19,keepBuffer:1,updateWhenIdle:true,crossOrigin:true,
+      attribution:'&copy; OpenStreetMap contributors',
+      maxZoom:19,keepBuffer:1,updateWhenIdle:true,
     });
     tileLayer.current=layer;
-    layer.on('tileload',()=>{tileFailures.current=0;setTileError(false);});
+    layer.on('tileload',()=>{
+      if(tileLayer.current!==layer)return;
+      tileFailures.current=0;
+      setTileError(false);
+    });
     layer.on('tileerror',()=>{
+      if(tileLayer.current!==layer)return;
       tileFailures.current+=1;
-      if(tileFailures.current>=3){
-        if(tileIndex.current<TILE_SOURCES.length-1)selectTiles(instance,tileIndex.current+1);
-        else setTileError(true);
+      if(tileFailures.current>=4){
+        if(index<TILE_SOURCES.length-1){
+          selectTiles(instance,index+1);
+        }else{
+          setTileError(true);
+        }
       }
     });
     layer.addTo(instance);
+    if(oldLayer && instance.hasLayer(oldLayer))instance.removeLayer(oldLayer);
+    setTileError(false);
   };
   useEffect(()=>{
     if(!el.current||map.current)return;
@@ -83,9 +90,24 @@ export default function DesktopMap({places=[],lang='vi',tr=k=>k,currentPlace=0,o
       observer=new ResizeObserver(()=>instance.invalidateSize({pan:false,debounceMoveend:true}));
       observer.observe(el.current);
     }
-    const timeout=setTimeout(()=>instance.invalidateSize({pan:false}),300);
+    const refresh=()=>instance.invalidateSize({pan:false});
+    window.addEventListener('resize',refresh);
+    window.addEventListener('orientationchange',refresh);
+    const timeout=setTimeout(refresh,350);
+    const delayed=setTimeout(refresh,1200);
+    const visibilityObserver=typeof IntersectionObserver!=='undefined'
+      ?new IntersectionObserver(entries=>{
+          if(entries.some(entry=>entry.isIntersecting)){
+            requestAnimationFrame(()=>instance.invalidateSize({pan:false}));
+          }
+        },{threshold:0.01})
+      :null;
+    visibilityObserver?.observe(el.current);
     return ()=>{
-      clearTimeout(timeout);observer?.disconnect();instance.remove();
+      clearTimeout(timeout);clearTimeout(delayed);
+      window.removeEventListener('resize',refresh);
+      window.removeEventListener('orientationchange',refresh);
+      visibilityObserver?.disconnect();observer?.disconnect();instance.remove();
       map.current=null;markers.current=null;routeLayer.current=null;gpsLayer.current=null;tileLayer.current=null;
     };
   },[]);
@@ -121,7 +143,6 @@ export default function DesktopMap({places=[],lang='vi',tr=k=>k,currentPlace=0,o
       {enableHighAccuracy:true,timeout:15000,maximumAge:10000}
     );
   };
-  useEffect(()=>()=>{if(watchId.current!=null&&navigator.geolocation)navigator.geolocation.clearWatch(watchId.current);},[]);
   useEffect(()=>{
     if(!ready||!request||!routeLayer.current)return;
     routeLayer.current.clearLayers();setSummary(null);
