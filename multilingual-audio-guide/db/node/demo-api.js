@@ -33,7 +33,12 @@ import {
 } from './analytics-service.js';
 const port=Number(process.env.DB_API_PORT ?? 3002);
 if (!Number.isInteger(port) || port<1 || port>65535) throw new Error('Invalid DB_API_PORT');
-const allowedOrigin=process.env.DB_API_CORS_ORIGIN ?? 'http://localhost:5173';
+const allowedOrigins = (
+  process.env.DB_API_CORS_ORIGIN ?? 'http://localhost:5173'
+)
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
 const tokens=createTokenService(process.env.AUTH_SECRET ?? 'dev-only-secret-change-me');
 if (!process.env.AUTH_SECRET) console.warn('AUTH_SECRET is not set; configure a private random secret before deployment.');
 const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -112,7 +117,7 @@ const mediaUploads=new Set();
 const server=http.createServer(async (req,res)=>{
   const origin = req.headers.origin;
   const isAllowed = origin && (
-    origin === allowedOrigin ||
+    allowedOrigins.includes(origin) ||
     /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin)
   );
   if (isAllowed) {
