@@ -35,7 +35,7 @@ export default function NavigationMap({ placesList, lang, selected, onSelect, us
     );
 
     map.createPane('offlineBasemap');
-    map.getPane('offlineBasemap').style.zIndex = '250';
+    map.getPane('offlineBasemap').style.zIndex = '190';
 
     const offlineLayer = L.geoJSON(null, {
       pane: 'offlineBasemap',
@@ -51,17 +51,17 @@ export default function NavigationMap({ placesList, lang, selected, onSelect, us
       },
     });
 
-    let active = true;
+       let active = true;
 
-    async function updateBasemap() {
+    function updateBasemap() {
       if (navigator.onLine) {
-        offlineLayer.remove();
         onlineLayer.addTo(map);
-        return;
+      } else {
+        onlineLayer.remove();
       }
+    }
 
-      onlineLayer.remove();
-
+    async function loadOfflineBasemap() {
       try {
         const mapUrl = new URL('/saigon-offline-map.geojson', location.origin).href;
         const response = await caches.match(mapUrl, {
@@ -70,9 +70,8 @@ export default function NavigationMap({ placesList, lang, selected, onSelect, us
         if (!response) return;
 
         const data = await response.json();
-        if (!active || navigator.onLine) return;
+        if (!active) return;
 
-        offlineLayer.clearLayers();
         offlineLayer.addData(data);
         offlineLayer.addTo(map);
       } catch (error) {
@@ -83,6 +82,7 @@ export default function NavigationMap({ placesList, lang, selected, onSelect, us
     window.addEventListener('online', updateBasemap);
     window.addEventListener('offline', updateBasemap);
     updateBasemap();
+    loadOfflineBasemap();
 
     mapRef.current = map;
     markersRef.current = L.layerGroup().addTo(map);
