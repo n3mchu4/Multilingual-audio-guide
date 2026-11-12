@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import NavigationMap from './components/NavigationMap';
 import { errorMessage } from "./services/apiClient";
+import { downloadOfflinePackage, getOfflineMedia, hasOfflinePackage } from './services/offlinePackage';
 import { readSavedPlaces, savePlaces } from "./services/offlinePlaces";
 import {
   getDownloadedImage,
@@ -110,6 +111,22 @@ const [downloadedImages, setDownloadedImages] = useState({});
 const [imageDownloadBusy, setImageDownloadBusy] = useState(false);
 const [imageDownloadError, setImageDownloadError] = useState('');  
 const imageDownloadLock = useRef(false);
+  const [packageLang, setPackageLang] = useState(null);
+  const [packageStatus, setPackageStatus] = useState({});
+  const [packageProgress, setPackageProgress] = useState(null);
+  const [packageError, setPackageError] = useState(false);
+  const packageLock = useRef(false);
+  const packageLanguage = packageLang ?? lang;
+  const isWeb = Platform.OS === 'web';
+
+  useEffect(() => {
+    if (!isWeb) return;
+    let active = true;
+    Promise.all(['vi', 'en'].map(hasOfflinePackage)).then(([vi, en]) => {
+      if (active) setPackageStatus({ vi, en });
+    });
+    return () => { active = false; };
+  }, [isWeb]);
 const [userLoc, setUserLoc] = useState(null); // { lat, lng } vị trí thật
   const [locStatus, setLocStatus] = useState("idle"); // idle | loading | ok | denied | error
   const [currentPlace, setCurrentPlace] = useState(0);
@@ -225,7 +242,7 @@ useEffect(() => {
     const entries = await Promise.all(
       urls.map(async (url) => [
         url,
-        await getDownloadedImage(url),
+        isWeb ? await getOfflineMedia(url) : await getDownloadedImage(url),
       ])
     );
 
@@ -246,7 +263,7 @@ useEffect(() => {
   return () => {
     active = false;
   };
-}, [placesList]);
+}, [placesList, isWeb, packageStatus]);
 
 // Ưu tiên ảnh trên máy, dùng URL online nếu chưa tải.
 const imageSource = (url) => ({
@@ -270,7 +287,7 @@ useEffect(() => {
 
   const sourceUrl = place.audioUrl?.[lang];
 
-  if (place.id && sourceUrl) {
+  if (!isWeb && place.id && sourceUrl) {
     getDownloadedAudio(place.id, lang, sourceUrl)
       .then((uri) => {
         if (active) setDownloadedAudioUri(uri);
@@ -283,11 +300,12 @@ useEffect(() => {
   return () => {
     active = false;
   };
-}, [place.id, lang, place.audioUrl?.[lang]]);
+}, [isWeb, place.id, lang, place.audioUrl?.[lang]]);
   // Audio Player phát nguồn audio của địa danh đang phát
   const player = useAudioPlayer(null, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
   const sourceRef = useRef('');
+  const playbackUriRef = useRef('');
   const pendingRef = useRef(null);
 
 // giữ phiên nghe hiện tại và mốc thời gian đã gửi lên backend.
@@ -578,11 +596,9 @@ const playAudio = async (targetIndex, start = null) => {
   const ended = audioEnded;
   const epoch = ++playbackEpoch.current;
   // Tìm tệp đã tải đúng địa danh và ngôn ngữ trước khi phát.
-const localAudioUri = await getDownloadedAudio(
-  targetPlace.id,
-  lang,
-  src
-);
+const localAudioUri = isWeb
+  ? await getOfflineMedia(src)
+  : await getDownloadedAudio(targetPlace.id, lang, src);
 
 // Bỏ kết quả nếu đã có thao tác phát hoặc đổi ngôn ngữ mới.
 if (epoch !== playbackEpoch.current) return;
@@ -590,8 +606,10 @@ if (epoch !== playbackEpoch.current) return;
   setAudioError('');
   setAudioEnded(false);
 
+  const playbackUri = localAudioUri || src;
+  const sourceChanged = sourceRef.current !== src || playbackUriRef.current !== playbackUri;
   const newSession =
-    sourceRef.current !== src ||
+    sourceChanged ||
     playingPlaceIndex !== targetIndex ||
     playingLanguage !== lang ||
     ended ||
@@ -629,10 +647,11 @@ if (epoch !== playbackEpoch.current) return;
   setPlayingLanguage(lang);
 
   try {
-    if (sourceRef.current !== src) {
+    if (sourceChanged) {
       player.pause();
 
       sourceRef.current = src;
+      playbackUriRef.current = playbackUri;
       pendingRef.current = {
         src,
         start: start ?? 0,
@@ -661,7 +680,7 @@ if (epoch !== playbackEpoch.current) return;
       player.replace(null);
 
       // Ưu tiên tệp trên máy; nếu chưa tải thì dùng URL online.
-      player.replace(localAudioUri || src);
+      player.replace(playbackUri);
     } else {
       if (
         start != null ||
@@ -818,6 +837,24 @@ const onRemoveDownloadedAudio = async () => {
   }
 };  
 // Tải ảnh của các địa danh; giữ ảnh tải thành công và cho phép thử lại.
+async function onDownloadPackage() {
+  if (packageLock.current) return;
+  packageLock.current = true;
+  setPackageProgress({ done: 0, total: 0 });
+  setPackageError(false);
+  try {
+    await downloadOfflinePackage(placesList, packageLanguage, (done, total) => {
+      setPackageProgress({ done, total });
+    });
+    setPackageStatus((current) => ({ ...current, [packageLanguage]: true }));
+  } catch {
+    setPackageError(true);
+  } finally {
+    packageLock.current = false;
+    setPackageProgress(null);
+  }
+}
+
 const onDownloadImages = async () => {
   if (imageDownloadLock.current) return;
 
@@ -1132,7 +1169,8 @@ const welcome = (
         {audioLoading && matchesSelection ? (
           <Text style={styles.note}>{lang === "vi" ? "Đang tải audio..." : "Loading audio..."}</Text>
         ) : null}
-                {/* Tải audio của ngôn ngữ đang chọn để nghe ngoại tuyến. */}
+        {!isWeb && (
+          <>
         <Pressable
           style={styles.secondarySmall}
           onPress={onDownloadAudio}
@@ -1175,6 +1213,8 @@ const welcome = (
             {audioDownloadError}
           </Text>
         ) : null}
+          </>
+        )}
         {audioEnded && matchesSelection ? (
           <Text style={styles.note}>
             {lang === "vi" ? "Đã phát xong. Bấm ↺ để nghe lại." : "Finished. Tap ↺ to replay."}
@@ -1222,6 +1262,45 @@ const welcome = (
         <Text style={styles.title}>{tr("settingsTitle")}</Text>
       </View>
       <View style={styles.section}>
+        {isWeb ? (
+          <>
+            <Text style={styles.cardTitle}>
+              {lang === 'vi' ? 'Tải gói offline' : 'Download offline package'}
+            </Text>
+            <Text style={styles.paragraph}>
+              {lang === 'vi'
+                ? 'Lưu văn bản, ảnh và audio của các địa danh theo ngôn ngữ đã chọn.'
+                : 'Save landmark text, images and audio for the selected language.'}
+            </Text>
+            <Choice selected={packageLanguage === 'vi'} onPress={() => { if (!packageLock.current) { setPackageLang('vi'); setPackageError(false); } }}>
+              VN Tiếng Việt
+            </Choice>
+            <Choice selected={packageLanguage === 'en'} onPress={() => { if (!packageLock.current) { setPackageLang('en'); setPackageError(false); } }}>
+              EN English
+            </Choice>
+            <Pressable style={styles.secondarySmall} onPress={onDownloadPackage} disabled={Boolean(packageProgress)}>
+              <Text style={styles.pinkText}>
+                {packageProgress
+                  ? (lang === 'vi' ? 'Đang tải gói…' : 'Downloading package…')
+                  : (lang === 'vi' ? '↓ Tải gói đã chọn' : '↓ Download selected package')}
+              </Text>
+            </Pressable>
+            {packageProgress?.total > 0 && (
+              <Text style={styles.note}>{packageProgress.done}/{packageProgress.total}</Text>
+            )}
+            {packageStatus[packageLanguage] && (
+              <Text style={styles.note}>{lang === 'vi' ? '✓ Đã lưu gói này' : '✓ Package saved'}</Text>
+            )}
+            {packageError && (
+              <Text accessibilityRole="alert" style={styles.errorText}>
+                {lang === 'vi'
+                  ? 'Chưa tải xong gói. Kiểm tra kết nối rồi thử lại.'
+                  : 'Package download incomplete. Check your connection and retry.'}
+              </Text>
+            )}
+          </>
+        ) : (
+          <>
                 <Text style={styles.cardTitle}>
           {lang === 'vi' ? 'Ảnh ngoại tuyến' : 'Offline images'}
         </Text>
@@ -1259,6 +1338,8 @@ const welcome = (
             {imageDownloadError}
           </Text>
         ) : null}
+          </>
+        )}
 
         <View style={{ height: 20 }} />
         <Text style={styles.cardTitle}>{tr("languageSettings")}</Text>
