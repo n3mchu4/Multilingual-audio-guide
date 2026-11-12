@@ -30,6 +30,7 @@ import {
   recordAudioPlay,
   recordListeningSession,
   getAnalyticsData,
+  recordOfflinePackageDownload,
 } from './analytics-service.js';
 const port=Number(process.env.DB_API_PORT ?? 3002);
 if (!Number.isInteger(port) || port<1 || port>65535) throw new Error('Invalid DB_API_PORT');
@@ -211,6 +212,21 @@ if (
     if (req.method==='GET' && url.pathname==='/api/analytics/stats') {
       if (!await authenticatedAdmin(req)) {sendJson(res,401,{error:'Admin authentication required'});return;}
       sendJson(res,200,{data:await getAnalyticsData()});return;
+    }
+        if (req.method === 'POST' && url.pathname === '/api/analytics/offline-downloads') {
+      const body = await readJson(req);
+      const visitorId = body?.visitorId;
+      const language = body?.language;
+
+      if (typeof visitorId !== 'string' || !uuidPattern.test(visitorId) ||
+          !['vi', 'en'].includes(language)) {
+        sendJson(res, 400, { error: 'A valid visitorId and language are required' });
+        return;
+      }
+
+      await recordOfflinePackageDownload({ visitorId, language });
+      sendJson(res, 200, { ok: true });
+      return;
     }
     if (req.method==='POST' && url.pathname==='/api/analytics/visitors') {
       const body=await readJson(req);

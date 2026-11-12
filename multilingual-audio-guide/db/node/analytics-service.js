@@ -136,6 +136,10 @@ export async function getAnalyticsData() {
     query(`
       SELECT
         (SELECT count(*)::int FROM public.analytics_visitors) AS visitors,
+                (
+          SELECT count(DISTINCT visitor_id)::int
+          FROM public.offline_package_downloads
+        ) AS "offlineDownloaders",
         (SELECT count(*)::int FROM public.audio_listens) AS listens,
         (
           SELECT COALESCE(sum(listened_seconds), 0)::float
@@ -182,4 +186,16 @@ export async function getAnalyticsData() {
       landmarkId: row.landmark_id,
     })),
   };
+}
+// Ghi nhận trình duyệt đã tải thành công gói offline theo ngôn ngữ.
+export async function recordOfflinePackageDownload({ visitorId, language }) {
+  await query(
+    `
+      INSERT INTO public.offline_package_downloads (visitor_id, language)
+      VALUES ($1, $2)
+      ON CONFLICT (visitor_id, language) DO UPDATE
+      SET last_downloaded_at = now()
+    `,
+    [visitorId, language],
+  );
 }

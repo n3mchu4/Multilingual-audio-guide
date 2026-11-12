@@ -171,6 +171,7 @@ export function AdminProvider({ children }) {
     activeAccounts: accounts.filter((account) => account.active).length,
     activeManagers: accounts.filter((account) => account.role === 'Manager' && account.active).length,
     visitors: analytics ? Number(analytics.visitors) : null,
+        offlineDownloaders: analytics?.offlineDownloaders ?? null,
     listens: analytics ? Number(analytics.listens) : null,
     pending: places.filter((place) => place.request).length,
     activeUsers: analytics?.activeUsers ?? null,

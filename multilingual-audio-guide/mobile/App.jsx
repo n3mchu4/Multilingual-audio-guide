@@ -18,7 +18,7 @@ import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import NavigationMap from './components/NavigationMap';
-import { errorMessage } from "./services/apiClient";
+import { apiPost, errorMessage } from "./services/apiClient";
 import { downloadOfflinePackage, getOfflineMedia, hasOfflinePackage } from './services/offlinePackage';
 import { readSavedPlaces, savePlaces } from "./services/offlinePlaces";
 import {
@@ -847,6 +847,16 @@ async function onDownloadPackage() {
       setPackageProgress({ done, total });
     });
     setPackageStatus((current) => ({ ...current, [packageLanguage]: true }));
+        void getVisitorId()
+      .then((visitorId) =>
+        apiPost('/api/analytics/offline-downloads', {
+          visitorId,
+          language: packageLanguage,
+        }),
+      )
+      .catch((error) => {
+        console.warn('Could not record offline package download', error);
+      });
   } catch {
     setPackageError(true);
   } finally {

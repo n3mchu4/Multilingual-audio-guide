@@ -105,6 +105,13 @@ export default function Dashboard() {
           <strong>{stats.visitors == null ? '—' : stats.visitors.toLocaleString('vi-VN')}</strong>
           <span className="label">Người dùng đã truy cập</span>
         </div>
+                <div className="stat">
+          <div className="stat-top">
+            <div className="stat-icon">↓</div>
+          </div>
+          <strong>{stats.offlineDownloaders?.toLocaleString('vi-VN') ?? '—'}</strong>
+          <span className="label">Trình duyệt đã tải gói offline</span>
+        </div>
       </div>
       {(stats.visitors == null || stats.listens == null) && (
         <p className="analytics-setup-note" role="status">
