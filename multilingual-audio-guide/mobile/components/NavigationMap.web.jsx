@@ -21,6 +21,7 @@ export default function NavigationMap({ placesList, lang, selected, onSelect, us
    const map = L.map(containerRef.current, {
   zoomControl: false,
 }).setView([10.777, 106.701], 14);
+    map.getContainer().style.backgroundColor = '#f5f2e8';
 
        const mapTilerKey = process.env.EXPO_PUBLIC_MAPTILER_KEY;
 
@@ -42,12 +43,27 @@ export default function NavigationMap({ placesList, lang, selected, onSelect, us
       interactive: false,
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
-      style: (feature) => {
+            style: (feature) => {
         const tags = feature.properties ?? {};
+
         if (tags.natural === 'water' || tags.waterway === 'river') {
-          return { color: '#7cb9d8', weight: 2, fillOpacity: 0.55 };
+          return {
+            color: '#76b7d5',
+            weight: 1.5,
+            fillColor: '#a6d6eb',
+            fillOpacity: 1,
+          };
         }
-        return { color: '#8b9299', weight: 2 };
+
+        if (tags.highway === 'primary' || tags.highway === 'secondary') {
+          return { color: '#e2b85c', weight: 3.5 };
+        }
+
+        if (tags.highway === 'tertiary') {
+          return { color: '#ead39b', weight: 2.5 };
+        }
+
+        return { color: '#c8c1b4', weight: 1.5 };
       },
     });
 
