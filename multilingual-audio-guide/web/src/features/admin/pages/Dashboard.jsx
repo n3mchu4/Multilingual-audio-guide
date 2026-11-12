@@ -5,8 +5,7 @@ import { useAdmin } from '../AdminContext';
 import { ADMIN_BASE } from '../navItems';
 
 function getInitialMobileAddress() {
-  const { hostname, origin } = window.location;
-  return hostname === 'localhost' || hostname === '127.0.0.1' ? '' : origin;
+  return 'https://saigon-guide-mobile-web.onrender.com';
 }
 
 export default function Dashboard() {
@@ -23,7 +22,7 @@ export default function Dashboard() {
       if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
         return '';
       }
-      return new URL('/user', url.origin).toString();
+      return url.toString();
     } catch {
       return '';
     }
