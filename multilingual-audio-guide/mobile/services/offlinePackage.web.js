@@ -2,6 +2,7 @@ import { savePlaces } from './offlinePlaces';
 
 const MEDIA_CACHE = 'saigon-guide-media-v1';
 const SHELL_CACHE = 'saigon-guide-shell-v1';
+const OFFLINE_MAP_PATH = '/saigon-offline-map.geojson';
 const objectUrls = new Map();
 
 function packageKey(lang) {
@@ -83,12 +84,26 @@ export async function downloadOfflinePackage(places, lang, onProgress) {
     onProgress(++done, sources.size);
   }
 
+    const mapUrl = new URL(OFFLINE_MAP_PATH, location.origin).href;
+
+  if (!(await cache.match(mapUrl))) {
+    const response = await fetch(mapUrl);
+    if (!response.ok) throw new Error('Could not download offline map');
+
+    const mapData = await response.clone().json();
+    if (mapData.type !== 'FeatureCollection' || !mapData.features?.length) {
+      throw new Error('Invalid offline map');
+    }
+
+    await cache.put(mapUrl, response);
+  }
+
   await saveAppShell();
   if (!(await savePlaces(places))) {
     throw new Error('Could not save landmark text');
   }
 
-  await cache.put(packageKey(lang), Response.json([...sources.keys()]));
+  await cache.put(packageKey(lang), Response.json([...sources.keys(), mapUrl]));
 }
 
 export async function hasOfflinePackage(lang) {
@@ -100,8 +115,10 @@ export async function hasOfflinePackage(lang) {
     const urls = await manifest.json();
     const keys = new Set((await cache.keys()).map((request) => request.url));
 
+       const mapUrl = new URL(OFFLINE_MAP_PATH, location.origin).href;
+
     return (
-      urls.length > 0 &&
+      urls.includes(mapUrl) &&
       urls.every((url) => keys.has(new URL(url, location.href).href))
     );
   } catch {

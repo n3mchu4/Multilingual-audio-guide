@@ -22,22 +22,75 @@ export default function NavigationMap({ placesList, lang, selected, onSelect, us
   zoomControl: false,
 }).setView([10.777, 106.701], 14);
 
-    const mapTilerKey = process.env.EXPO_PUBLIC_MAPTILER_KEY;
+       const mapTilerKey = process.env.EXPO_PUBLIC_MAPTILER_KEY;
 
-L.tileLayer(
-  `https://api.maptiler.com/maps/streets-v4/{z}/{x}/{y}.png?key=${mapTilerKey}`,
-  {
-    maxZoom: 19,
-    attribution:
-      '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> ' +
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
-  },
-).addTo(map);
+    const onlineLayer = L.tileLayer(
+      `https://api.maptiler.com/maps/streets-v4/{z}/{x}/{y}.png?key=${mapTilerKey}`,
+      {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> ' +
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+      },
+    );
+
+    map.createPane('offlineBasemap');
+    map.getPane('offlineBasemap').style.zIndex = '250';
+
+    const offlineLayer = L.geoJSON(null, {
+      pane: 'offlineBasemap',
+      interactive: false,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+      style: (feature) => {
+        const tags = feature.properties ?? {};
+        if (tags.natural === 'water' || tags.waterway === 'river') {
+          return { color: '#7cb9d8', weight: 2, fillOpacity: 0.55 };
+        }
+        return { color: '#8b9299', weight: 2 };
+      },
+    });
+
+    let active = true;
+
+    async function updateBasemap() {
+      if (navigator.onLine) {
+        offlineLayer.remove();
+        onlineLayer.addTo(map);
+        return;
+      }
+
+      onlineLayer.remove();
+
+      try {
+        const mapUrl = new URL('/saigon-offline-map.geojson', location.origin).href;
+        const response = await caches.match(mapUrl, {
+          cacheName: 'saigon-guide-media-v1',
+        });
+        if (!response) return;
+
+        const data = await response.json();
+        if (!active || navigator.onLine) return;
+
+        offlineLayer.clearLayers();
+        offlineLayer.addData(data);
+        offlineLayer.addTo(map);
+      } catch (error) {
+        console.warn('Could not read offline map', error);
+      }
+    }
+
+    window.addEventListener('online', updateBasemap);
+    window.addEventListener('offline', updateBasemap);
+    updateBasemap();
 
     mapRef.current = map;
     markersRef.current = L.layerGroup().addTo(map);
 
     return () => {
+      active = false;
+      window.removeEventListener('online', updateBasemap);
+      window.removeEventListener('offline', updateBasemap);
       map.remove();
       mapRef.current = null;
       markersRef.current = null;
