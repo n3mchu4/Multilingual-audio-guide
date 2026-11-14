@@ -41,7 +41,6 @@ export default function Places() {
           <thead>
             <tr>
               <th>Địa danh</th>
-              <th>Tuyến xe buýt</th>
               <th>Yêu cầu từ Manager</th>
               <th>Nội dung người dùng</th>
               <th>Thao tác</th>
@@ -65,17 +64,7 @@ export default function Places() {
                       </div>
                     </div>
                   </td>
-                  <td>
-                    {p.buses.length ? (
-                      p.buses.map((b, i) => (
-                        <span className="bus-number" key={i}>
-                          {b.no}
-                        </span>
-                      ))
-                    ) : (
-                      <span style={{ color: 'var(--muted)' }}>Chưa có tuyến</span>
-                    )}
-                  </td>
+                  
                   <td>
                     {p.request ? (
                       <>

@@ -108,26 +108,7 @@ CREATE TABLE IF NOT EXISTS public.proposal_images (
   sort_order integer NOT NULL DEFAULT 0 CHECK (sort_order >= 0),
   UNIQUE (proposal_id, image_url)
 );
-CREATE TABLE IF NOT EXISTS public.bus_routes (
-  route_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  route_number text NOT NULL UNIQUE CHECK (btrim(route_number) <> '')
-);
-CREATE TABLE IF NOT EXISTS public.bus_stops (
-  stop_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  stop_name text NOT NULL CHECK (btrim(stop_name) <> ''),
-  latitude numeric(9,6) CHECK (latitude BETWEEN -90 AND 90),
-  longitude numeric(9,6) CHECK (longitude BETWEEN -180 AND 180),
-  CHECK ((latitude IS NULL) = (longitude IS NULL))
-);
-CREATE TABLE IF NOT EXISTS public.landmark_bus_connections (
-  connection_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  landmark_id text NOT NULL REFERENCES public.landmarks(landmark_id) ON DELETE CASCADE,
-  route_id uuid NOT NULL REFERENCES public.bus_routes(route_id) ON DELETE RESTRICT,
-  stop_id uuid NOT NULL REFERENCES public.bus_stops(stop_id) ON DELETE RESTRICT,
-  UNIQUE (landmark_id, route_id, stop_id)
-);
-CREATE INDEX IF NOT EXISTS connections_route_idx ON public.landmark_bus_connections(route_id);
-CREATE INDEX IF NOT EXISTS connections_stop_idx ON public.landmark_bus_connections(stop_id);
+
 CREATE TABLE IF NOT EXISTS public.activity_logs (
   log_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES public.users(user_id) ON DELETE SET NULL,

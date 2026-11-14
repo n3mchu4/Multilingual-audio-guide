@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { pool, query } from './database.js';
+import { query } from './database.js';
 import { getAnalyticsData } from './analytics-service.js';
 
 const formatDate = (value) =>
@@ -28,15 +28,11 @@ function mapVersion(row, prefix = '') {
 }
 
 export async function getAdminBootstrap() {
-  const [landmarksResult, imagesResult, busesResult, proposalsResult, proposalImagesResult, usersResult, logsResult] =
+  const [landmarksResult, imagesResult, proposalsResult, proposalImagesResult, usersResult, logsResult] =
     await Promise.all([
       query('SELECT * FROM public.landmarks ORDER BY landmark_id'),
       query('SELECT landmark_id, image_url FROM public.landmark_images ORDER BY sort_order, image_id'),
-      query(`SELECT c.connection_id, c.landmark_id, r.route_number, s.stop_name
-        FROM public.landmark_bus_connections c
-        JOIN public.bus_routes r ON r.route_id = c.route_id
-        JOIN public.bus_stops s ON s.stop_id = c.stop_id
-        ORDER BY c.landmark_id, r.route_number, s.stop_name`),
+     
       query(`SELECT p.*, u.username
         FROM public.proposals p
         JOIN public.users u ON u.user_id = p.manager_id
@@ -61,16 +57,7 @@ export async function getAdminBootstrap() {
     imagesByLandmark.set(image.landmark_id, images);
   }
 
-  const busesByLandmark = new Map();
-  for (const bus of busesResult.rows) {
-    const buses = busesByLandmark.get(bus.landmark_id) ?? [];
-    buses.push({
-      id: bus.connection_id,
-      no: bus.route_number,
-      stop: bus.stop_name,
-    });
-    busesByLandmark.set(bus.landmark_id, buses);
-  }
+  
 
   const imagesByProposal = new Map();
   for (const image of proposalImagesResult.rows) {
@@ -106,7 +93,7 @@ export async function getAdminBootstrap() {
       name: landmark.title_vi,
       district: landmark.subtitle_vi,
       content: landmark.description_vi,
-      buses: busesByLandmark.get(landmark.landmark_id) ?? [],
+      buses: [],
       request,
       current,
     };
@@ -196,48 +183,6 @@ export async function updateLandmark(id, { name, district, content }) {
   if (!rowCount) throw new Error('Không tìm thấy địa danh.');
 }
 
-export async function addBusConnection(landmarkId, { no, stop }) {
-  const routeNumber = String(no ?? '').trim();
-  const stopName = String(stop ?? '').trim();
-  if (!routeNumber || !stopName) throw new Error('Cần nhập số tuyến và tên trạm.');
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const landmark = await client.query(
-      'SELECT 1 FROM public.landmarks WHERE landmark_id = $1 FOR SHARE',
-      [landmarkId],
-    );
-    if (!landmark.rowCount) throw new Error('Không tìm thấy địa danh.');
-    const route = await client.query(`INSERT INTO public.bus_routes(route_number)
-      VALUES ($1) ON CONFLICT (route_number) DO UPDATE SET route_number = EXCLUDED.route_number
-      RETURNING route_id`, [routeNumber]);
-    const existingStop = await client.query(
-      'SELECT stop_id FROM public.bus_stops WHERE lower(stop_name) = lower($1) LIMIT 1',
-      [stopName],
-    );
-    const stopResult = existingStop.rowCount
-      ? existingStop
-      : await client.query('INSERT INTO public.bus_stops(stop_name) VALUES ($1) RETURNING stop_id', [stopName]);
-    await client.query(`INSERT INTO public.landmark_bus_connections(landmark_id, route_id, stop_id)
-      VALUES ($1, $2, $3) ON CONFLICT (landmark_id, route_id, stop_id) DO NOTHING`,
-    [landmarkId, route.rows[0].route_id, stopResult.rows[0].stop_id]);
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
-}
-
-export async function removeBusConnection(connectionId) {
-  const { rowCount } = await query(
-    'DELETE FROM public.landmark_bus_connections WHERE connection_id = $1',
-    [connectionId],
-  );
-  if (!rowCount) throw new Error('Không tìm thấy kết nối xe buýt.');
-}
 
 export async function reviewLatestProposal(landmarkId, proposalId, adminId, accepted) {
   const { rows } = await query(`SELECT proposal_id FROM public.proposals

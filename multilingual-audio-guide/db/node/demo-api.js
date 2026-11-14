@@ -9,10 +9,8 @@ import { listLandmarks, getLandmark } from './landmark-repository.js';
 import { storageRoot, validateStorageKey } from './storage.js';
 import { receiveMedia } from './media-upload.js';
 import {
-  addBusConnection,
   createManagerAccount,
   getAdminBootstrap,
-  removeBusConnection,
   reviewLatestProposal,
   setManagerStatus,
   updateLandmark,
@@ -339,13 +337,11 @@ if (
         await updateManagerAccount(accountMatch[1],await readJson(req));
         sendJson(res,200,{ok:true});return;
       }
-      const landmarkMatch=url.pathname.match(/^\/api\/admin\/landmarks\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/(buses|review))?$/);
+      const landmarkMatch=url.pathname.match(/^\/api\/admin\/landmarks\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/(review))?$/);
       if (req.method==='PATCH' && landmarkMatch && !landmarkMatch[2]) {
         await updateLandmark(landmarkMatch[1],await readJson(req));sendJson(res,200,{ok:true});return;
       }
-      if (req.method==='POST' && landmarkMatch?.[2]==='buses') {
-        await addBusConnection(landmarkMatch[1],await readJson(req));sendJson(res,201,{ok:true});return;
-      }
+      
       if (req.method==='POST' && landmarkMatch?.[2]==='review') {
         const body=await readJson(req);
         if (!uuidPattern.test(String(body.proposalId ?? '')) || typeof body.accepted!=='boolean') {
@@ -354,11 +350,7 @@ if (
         await reviewLatestProposal(landmarkMatch[1],body.proposalId,admin.user_id,body.accepted);
         sendJson(res,200,{ok:true});return;
       }
-      const busMatch=url.pathname.match(/^\/api\/admin\/bus-connections\/([0-9a-f-]+)$/i);
-      if (req.method==='DELETE' && busMatch) {
-        if (!uuidPattern.test(busMatch[1])) {sendJson(res,400,{error:'Invalid bus connection ID'});return;}
-        await removeBusConnection(busMatch[1]);sendJson(res,200,{ok:true});return;
-      }
+     
       sendJson(res,404,{error:'Not found'});return;
     }
     if (req.method!=='GET') {sendJson(res,405,{error:'Method not allowed'});return;}
