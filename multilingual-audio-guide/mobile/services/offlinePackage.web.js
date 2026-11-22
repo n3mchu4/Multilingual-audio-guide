@@ -1,8 +1,7 @@
-import { savePlaces } from './offlinePlaces';
+import { readSavedPlaces, savePlaces } from './offlinePlaces';
 
 const MEDIA_CACHE = 'saigon-guide-media-v1';
 const SHELL_CACHE = 'saigon-guide-shell-v1';
-const OFFLINE_MAP_PATH = '/saigon-offline-map.geojson';
 const objectUrls = new Map();
 
 function packageKey(lang) {
@@ -41,18 +40,15 @@ async function saveAppShell() {
 }
 
 export async function downloadOfflinePackage(places, lang, onProgress) {
-  if (!['vi', 'en'].includes(lang) || !places.length || !navigator.serviceWorker) {
+  if (!['vi', 'en'].includes(lang) || !Array.isArray(places) || !places.length || !('serviceWorker' in navigator)) {
     throw new Error('Offline packages unavailable');
   }
 
   const sources = new Map();
   for (const place of places) {
-    if (!place.audioUrl?.[lang]) {
-      throw new Error('Missing audio for ' + place.id);
-    }
-
-    sources.set(place.audioUrl[lang], 'audio');
-    for (const url of [place.image, ...place.gallery].filter(Boolean)) {
+    // PRD: a landmark can have no audio/images; cache only available assets.
+    if (place.audioUrl?.[lang]) sources.set(place.audioUrl[lang], 'audio');
+    for (const url of [place.image, ...(place.gallery || [])].filter(Boolean)) {
       sources.set(url, 'image');
     }
   }
@@ -84,26 +80,13 @@ export async function downloadOfflinePackage(places, lang, onProgress) {
     onProgress(++done, sources.size);
   }
 
-    const mapUrl = new URL(OFFLINE_MAP_PATH, location.origin).href;
-
-  if (!(await cache.match(mapUrl))) {
-    const response = await fetch(mapUrl);
-    if (!response.ok) throw new Error('Could not download offline map');
-
-    const mapData = await response.clone().json();
-    if (mapData.type !== 'FeatureCollection' || !mapData.features?.length) {
-      throw new Error('Invalid offline map');
-    }
-
-    await cache.put(mapUrl, response);
-  }
-
   await saveAppShell();
   if (!(await savePlaces(places))) {
     throw new Error('Could not save landmark text');
   }
 
-  await cache.put(packageKey(lang), Response.json([...sources.keys(), mapUrl]));
+  // Publish the manifest last: failed downloads must never be shown as complete.
+  await cache.put(packageKey(lang), Response.json([...sources.keys()]));
 }
 
 export async function hasOfflinePackage(lang) {
@@ -115,11 +98,14 @@ export async function hasOfflinePackage(lang) {
     const urls = await manifest.json();
     const keys = new Set((await cache.keys()).map((request) => request.url));
 
-       const mapUrl = new URL(OFFLINE_MAP_PATH, location.origin).href;
-
+    const saved = await readSavedPlaces();
     return (
-      urls.includes(mapUrl) &&
-      urls.every((url) => keys.has(new URL(url, location.href).href))
+      Array.isArray(urls) &&
+      saved?.places?.length > 0 &&
+      urls.every((url) => {
+        try { return keys.has(new URL(url, location.href).href); }
+        catch { return false; }
+      })
     );
   } catch {
     return false;
