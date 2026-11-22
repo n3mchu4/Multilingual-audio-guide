@@ -422,6 +422,4 @@ Proxy API hiện được khai báo ở `server.proxy` cho dev. Khi preview ho�
 
 
 
-## G01 — Upload ảnh và audio
 
-Manager có thể chọn tệp ảnh bìa, ảnh thư viện và audio VI/EN; xem tiến trình, hủy và thử lại khi lỗi. Xem [hướng dẫn cấu hình local/Supabase và API upload](multilingual-audio-guide/docs/media-upload.md).
