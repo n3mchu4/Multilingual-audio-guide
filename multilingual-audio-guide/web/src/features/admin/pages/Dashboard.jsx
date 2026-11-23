@@ -36,6 +36,24 @@ export default function Dashboard() {
   }, [refresh]);
   const playsByLandmark = stats.playsByLandmark || {};
   const recentPlays = analytics?.recentPlays || [];
+  const hourlyListens = analytics?.hourlyListens;
+
+const maxHourlyListens = Math.max(
+  1,
+  ...(hourlyListens ?? []).map((hour) => hour.count),
+);
+
+const hourFormatter = new Intl.DateTimeFormat("vi-VN", {
+  timeZone: "Asia/Ho_Chi_Minh",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+const dateFormatter = new Intl.DateTimeFormat("vi-VN", {
+  timeZone: "Asia/Ho_Chi_Minh",
+  day: "2-digit",
+  month: "2-digit",
+});
 
   return (
     <section className="page dashboard-page">
@@ -65,8 +83,8 @@ export default function Dashboard() {
             <div className="stat-icon">🎧</div>
             <span className="trend">Âm thanh</span>
           </div>
-          <strong>{stats.totalAudioPlays ?? '—'}</strong>
-          <span className="label">Tổng lượt nghe thuyết minh</span>
+          <strong>{analytics?.listensLast24Hours ?? "—"}</strong>
+<span className="label">Lượt nghe trong 24 giờ gần nhất</span>
         </div>
 
         <div className="stat">
@@ -119,6 +137,104 @@ export default function Dashboard() {
       )}
 
       <div className="panel mobile-share">
+      <div className="panel hourly-listens">
+  <div className="panel-head">
+    <div>
+      <h3>Lượt nghe thuyết minh trong 24 giờ gần nhất</h3>
+      <p>Mỗi cột là một khoảng 60 phút · Giờ Việt Nam</p>
+    </div>
+
+    <span className="status live">
+      {analytics?.listensLast24Hours ?? "—"} lượt nghe
+    </span>
+  </div>
+
+  <div className="panel-body">
+    {hourlyListens?.length === 24 ? (
+      <>
+        <div className="hourly-listens-scroll">
+          <div
+            className="hourly-listens-chart"
+            role="img"
+            aria-label="Biểu đồ lượt nghe theo giờ. Bảng số liệu nằm bên dưới."
+          >
+            {hourlyListens.map((hour) => (
+              <div
+                className="hourly-listens-column"
+                key={hour.start}
+                title={
+                  `${dateFormatter.format(new Date(hour.start))} ` +
+                  `${hourFormatter.format(new Date(hour.start))} – ` +
+                  `${hourFormatter.format(new Date(hour.end))}: ` +
+                  `${hour.count} lượt nghe`
+                }
+              >
+                <span className="hourly-listens-count">
+                  {hour.count}
+                </span>
+
+                <div className="hourly-listens-track">
+                  <div
+                    className="hourly-listens-bar"
+                    style={{
+                      height: `${(hour.count / maxHourlyListens) * 100}%`,
+                    }}
+                  />
+                </div>
+
+                <span className="hourly-listens-label">
+                  {hourFormatter.format(new Date(hour.start))}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {analytics.listensLast24Hours === 0 && (
+          <p role="status">
+            Chưa có lượt nghe trong 24 giờ gần nhất.
+          </p>
+        )}
+
+        <details className="hourly-listens-data">
+          <summary>Xem bảng số liệu</summary>
+
+          <table>
+            <caption>
+              Lượt nghe theo từng khoảng giờ, giờ Việt Nam
+            </caption>
+
+            <thead>
+              <tr>
+                <th scope="col">Bắt đầu</th>
+                <th scope="col">Kết thúc</th>
+                <th scope="col">Lượt nghe</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {hourlyListens.map((hour) => (
+                <tr key={hour.start}>
+                  <td>
+                    {dateFormatter.format(new Date(hour.start))}{" "}
+                    {hourFormatter.format(new Date(hour.start))}
+                  </td>
+                  <td>
+                    {dateFormatter.format(new Date(hour.end))}{" "}
+                    {hourFormatter.format(new Date(hour.end))}
+                  </td>
+                  <td>{hour.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      </>
+    ) : (
+      <p role="status">Chưa tải được thống kê theo giờ.</p>
+    )}
+  </div>
+</div>
         <div className="panel-head">
           <div>
             <h3>Mở giao diện khách trên điện thoại</h3>
