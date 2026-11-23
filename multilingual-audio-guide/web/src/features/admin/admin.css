@@ -85,3 +85,73 @@
 @media(max-width:600px){.admin-root .mobile-share-body{grid-template-columns:1fr}.admin-root .mobile-share-qr{justify-self:center}}
 @media(max-width:900px){.admin-root .dashboard-page .stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.admin-root .dashboard-page .stats{grid-template-columns:1fr}}
+.admin-root .hourly-listens {
+  margin-bottom: 18px;
+}
+
+.admin-root .hourly-listens-scroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.admin-root .hourly-listens-chart {
+  display: flex;
+  gap: 10px;
+  min-width: 1000px;
+  height: 250px;
+  align-items: stretch;
+}
+
+.admin-root .hourly-listens-column {
+  display: flex;
+  flex: 1;
+  min-width: 30px;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-root .hourly-listens-count {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-root .hourly-listens-track {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid #e5d8df;
+}
+
+.admin-root .hourly-listens-bar {
+  width: 100%;
+  background: linear-gradient(#d63384, #ad1f63);
+  border-radius: 5px 5px 0 0;
+}
+
+.admin-root .hourly-listens-label {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.admin-root .hourly-listens-data {
+  margin-top: 14px;
+}
+
+.admin-root .hourly-listens-data summary {
+  cursor: pointer;
+}
+
+.admin-root .hourly-listens-data table {
+  width: 100%;
+  margin-top: 12px;
+  border-collapse: collapse;
+}
+
+.admin-root .hourly-listens-data th,
+.admin-root .hourly-listens-data td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}

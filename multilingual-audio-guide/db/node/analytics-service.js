@@ -132,7 +132,7 @@ export async function recordListeningSession(event) {
 
 // Tổng hợp số khách, lượt nghe, thời gian nghe và các lượt nghe gần nhất cho dashboard.
 export async function getAnalyticsData() {
-  const [totals, byLandmark, recent] = await Promise.all([
+const [totals, byLandmark, recent, hourly] = await Promise.all([
     query(`
       SELECT
         (SELECT count(*)::int FROM public.analytics_visitors) AS visitors,
@@ -170,17 +170,41 @@ export async function getAnalyticsData() {
       FROM public.audio_listens a
       JOIN public.landmarks l USING (landmark_id)
       ORDER BY a.listened_at DESC, a.listen_id DESC
-      LIMIT 15
+           LIMIT 15
+    `),
+
+    query(`
+      WITH time_window AS (
+        SELECT now() AS end_time
+      ), hours AS (
+        SELECT
+          end_time - interval '24 hours'
+            + n * interval '1 hour' AS start_time,
+          end_time - interval '23 hours'
+            + n * interval '1 hour' AS end_time
+        FROM time_window
+        CROSS JOIN generate_series(0, 23) AS n
+      )
+      SELECT
+        h.start_time AS "start",
+        h.end_time AS "end",
+        count(a.listen_id)::int AS count
+      FROM hours h
+      LEFT JOIN public.audio_listens a
+        ON a.listened_at >= h.start_time
+        AND a.listened_at < h.end_time
+      GROUP BY h.start_time, h.end_time
+      ORDER BY h.start_time
     `),
   ]);
 
   return {
-    ...totals.rows[0],
-    activeUsers: presence.count(),
-    totalAudioPlays: totals.rows[0].listens,
-    playsByLandmark: Object.fromEntries(
-      byLandmark.rows.map((row) => [row.landmark_id, row.count])
-    ),
+  ...totals.rows[0],
+  hourlyListens: hourly.rows,
+  listensLast24Hours: hourly.rows.reduce(
+    (total, hour) => total + hour.count,
+    0,
+  ),
     recentPlays: recent.rows.map((row) => ({
       ...row,
       landmarkId: row.landmark_id,
