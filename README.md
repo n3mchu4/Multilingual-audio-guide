@@ -1,6 +1,8 @@
 # Saigon Audio Guide — Multilingual Audio Guide
 
-Ứng dụng thuyết minh địa danh tại khu vực Quận 1, TP. Hồ Chí Minh, hỗ trợ tiếng Việt và tiếng Anh trên web và ứng dụng mobile sử dụng React Native/Expo. Hệ thống có giao diện khách, Admin và Manager; nội dung và thống kê được lưu trong PostgreSQL, media được truy cập qua URL.
+Ứng dụng hướng dẫn và thuyết minh 7 địa danh trung tâm TP. Hồ Chí Minh bằng tiếng Việt và tiếng Anh, gồm giao diện khách trên web, ứng dụng Expo/React Native, khu vực Admin và Manager. Dữ liệu nghiệp vụ và thống kê dùng PostgreSQL; ảnh/audio có thể dùng URL công khai hoặc lưu trữ local qua API.
+
+> **Phạm vi tài liệu:** README này phản ánh nhánh `main`, không bao gồm các thay đổi chỉ nằm trên nhánh tính năng riêng. Tính năng kết nối xe buýt cũ đã được loại bỏ; không sử dụng hướng dẫn/API xe buýt trong các tài liệu cũ.
 
 ## Mục lục
 
@@ -41,6 +43,8 @@
 - Ghi nhận phiên nghe, nền tảng Android/iOS, số giây nghe và trạng thái hoàn thành.
 - Lưu hàng đợi thống kê trên thiết bị để thử gửi lại khi API lỗi hoặc ứng dụng hoạt động trở lại.
 - Khi ứng dụng xuống nền, mã hiện tại dừng audio và lưu trạng thái phiên nghe.
+- Hỗ trợ lưu nội dung địa danh, tải ảnh và audio để sử dụng khi mất mạng; có thao tác xóa audio đã tải. Phạm vi offline phụ thuộc nền tảng và tệp đã tải thực tế.
+- Có thành phần tải gói offline theo ngôn ngữ cho mobile web, nhưng cần kiểm tra riêng tài nguyên bản đồ/service worker và quy trình export trước khi coi đây là chức năng hoạt động hoàn chỉnh.
 
 ### Admin
 
@@ -49,8 +53,9 @@
 - Chỉnh sửa một số nội dung địa danh qua giao diện quản trị hiện có.
 - Tạo, sửa, phân công địa danh và khóa/mở tài khoản Manager.
 - Xem, duyệt hoặc từ chối đề xuất cập nhật nội dung.
-- Thêm/xóa liên kết tuyến xe buýt và trạm xuống của địa danh.
 - Xem nhật ký hoạt động.
+- Dashboard có chỉ số trình duyệt tải gói offline khi database đã áp dụng migration và quyền truy cập phù hợp.
+- Đây là khu vực Admin của `main`; chưa có bộ quản trị phiên bản nội dung, media và cài đặt mở rộng thuộc nhánh tính năng đã thu hồi.
 
 ### Manager
 
@@ -58,6 +63,8 @@
 - Soạn đề xuất nội dung VI/EN, thông tin địa danh và các URL media.
 - Gửi đề xuất để Admin xét duyệt; nội dung chính thức được cập nhật theo quy trình duyệt.
 - Xem dữ liệu và trạng thái đề xuất trong workspace.
+- Tải ảnh/audio từ cổng Manager có kiểm tra tệp và phản hồi tiến trình; backend cần cấu hình local storage hoặc Supabase Storage tương ứng.
+- Không nhầm giao diện Manager trong `main` (`ManagerPage.jsx`) với `ManagerWorkspace.jsx` của nhánh nâng cấp trước đó.
 
 ## Công nghệ
 
@@ -154,9 +161,18 @@ psql -h 127.0.0.1 -U postgres -W -d saigon_audio_guide -v ON_ERROR_STOP=1 -f db/
 psql -h 127.0.0.1 -U postgres -W -d saigon_audio_guide -v ON_ERROR_STOP=1 -f db/migrations/20261022_transcript_timing.sql
 psql -h 127.0.0.1 -U postgres -W -d saigon_audio_guide -v ON_ERROR_STOP=1 -f db/migrations/20261026_device_sessions.sql
 psql -h 127.0.0.1 -U postgres -W -d saigon_audio_guide -v ON_ERROR_STOP=1 -f db/migrations/20261030_mobile_listening.sql
+psql -h 127.0.0.1 -U postgres -W -d saigon_audio_guide -v ON_ERROR_STOP=1 -f db/migrations/20261112_offline_package_downloads.sql
 ```
 
-Migration `20261030_mobile_listening.sql` bổ sung các cột phiên nghe mà API thống kê đang truy vấn, đồng thời cấp quyền UPDATE `audio_listens` cho `guide_app`. `setup.ps1` hiện chưa tự chạy các file migration.
+Migration `20261030_mobile_listening.sql` bổ sung các cột phiên nghe mà API thống kê đang truy vấn, đồng thời cấp quyền UPDATE `audio_listens` cho `guide_app`. Migration `20261112_offline_package_downloads.sql` tạo bảng thống kê tải gói offline; API và Dashboard hiện truy vấn bảng này, nên thiếu migration có thể làm thống kê lỗi.
+
+**Lưu ý quyền DB:** Migration offline mới chỉ tạo bảng, không cấp quyền cho `guide_app`. Sau khi áp dụng migration bằng tài khoản có quyền quản trị, cấp thêm quyền tối thiểu cần dùng:
+
+```sql
+GRANT SELECT, INSERT, UPDATE ON TABLE public.offline_package_downloads TO guide_app;
+```
+
+Cũng kiểm tra quyền truy cập `device_sessions` của `guide_app` nếu heartbeat báo `permission denied`, vì bảng này được tạo qua migration riêng. `setup.ps1` chưa tự chạy các file migration.
 
 ### 5. Cấu hình môi trường
 
@@ -329,8 +345,9 @@ Hướng dẫn chi tiết: [Transcript timing](multilingual-audio-guide/docs/tra
 | `listeningSeconds` | Tổng `listened_seconds` |
 | `completedListens` | Số bản ghi có `completed=true` |
 
-- Heartbeat mặc định gửi mỗi **5 giây**, hết hạn sau **10 giây** không nhận ping; Dashboard lấy thống kê khoảng mỗi **6 giây**.
+- Heartbeat sử dụng bộ theo dõi presence và có thời hạn hoạt động; Dashboard tại `main` gọi `refresh()` mỗi **30 giây**. Không diễn giải bộ đếm online là thống kê realtime tuyệt đối.
 - `device_sessions` lưu lịch sử hoạt động. Không coi toàn bộ bản ghi trong bảng này là thiết bị đang online.
+- `offlineDownloaders` đếm số visitor ID phân biệt từng ghi nhận tải gói offline (không chứng minh gói còn được lưu hoặc đã dùng offline thành công).
 - Online phản ánh các client gửi heartbeat; không tương đương số tài khoản Admin/Manager đã đăng nhập.
 - Bộ đếm online nằm trong bộ nhớ một tiến trình API và mất trạng thái khi API khởi động lại; chưa có cơ chế tổng hợp nhiều API instance.
 - Web hiện gửi lượt nghe qua `/api/analytics/listens`; mobile gửi snapshot phiên nghe qua `/api/analytics/play`.
@@ -351,6 +368,7 @@ Hướng dẫn chi tiết: [Transcript timing](multilingual-audio-guide/docs/tra
 | POST | `/api/analytics/visitors` | Ghi nhận visitor |
 | POST | `/api/analytics/listens` | Ghi lượt nghe web |
 | POST | `/api/analytics/play` | Ghi/cập nhật phiên nghe; có hỗ trợ payload legacy |
+| POST | `/api/analytics/offline-downloads` | Ghi nhận visitor ID và ngôn ngữ của lần tải gói offline |
 | GET | `/api/analytics/stats` | Thống kê, yêu cầu Admin |
 | GET | `/api/admin/bootstrap` | Dữ liệu ban đầu cho Admin |
 | POST | `/api/admin/accounts` | Tạo Manager |
@@ -358,9 +376,8 @@ Hướng dẫn chi tiết: [Transcript timing](multilingual-audio-guide/docs/tra
 | PATCH | `/api/admin/accounts/:id/status` | Khóa/mở Manager |
 | PATCH | `/api/admin/landmarks/:id` | Cập nhật địa danh |
 | POST | `/api/admin/landmarks/:id/review` | Duyệt/từ chối đề xuất |
-| POST | `/api/admin/landmarks/:id/buses` | Thêm liên kết xe buýt |
-| DELETE | `/api/admin/bus-connections/:id` | Xóa liên kết xe buýt |
 | GET | `/api/manager/workspace` | Workspace Manager |
+| POST | `/api/manager/media?kind=image\|audio&filename=...` | Upload tệp Manager (cần token Manager, cấu hình storage) |
 | POST | `/api/manager/proposals` | Gửi đề xuất nội dung |
 
 Các endpoint Admin/Manager kiểm tra token và vai trò. Token đăng nhập của API demo có thời hạn 30 phút. Chi tiết payload và xử lý hiện hành nằm trong [demo-api.js](multilingual-audio-guide/db/node/demo-api.js).
@@ -391,13 +408,14 @@ Proxy API hiện được khai báo ở `server.proxy` cho dev. Khi preview ho�
 
 - Chưa xác nhận tính khả dụng của tất cả URL ảnh/audio trong seed, đặc biệt audio tiếng Anh cho từng địa danh.
 - Chưa có bộ mốc câu đã căn audio thật đi kèm; mobile hiện đọc transcript theo đoạn.
-- Hàng đợi thống kê mobile không phải chức năng tải audio/nội dung để nghe offline.
+- Hàng đợi thống kê mobile khác với các chức năng lưu nội dung/ảnh/audio offline. Việc sử dụng offline cần tải sẵn tài nguyên trước khi mất mạng.
+- `offlinePackage.web.js` tham chiếu `/offline-worker.js` và `/saigon-offline-map.geojson`, nhưng hai tài nguyên này không xuất hiện trong `web/public/` của `main`; không nên quảng bá tải gói bản đồ offline trên web như tính năng đã hoàn chỉnh nếu chưa bổ sung và kiểm thử các tài nguyên đó.
 - QR ở dev server mở web qua LAN; chưa phải luồng deep link native Android/iOS hoàn chỉnh.
 - API đăng nhập mặc định chưa triển khai OTP, 2FA hoặc khóa tạm sau nhiều lần sai mật khẩu.
 - Các file `docs/prd.md`, `docs/architecture.md`, `docs/api-contract.md`, `docs/demo-script.md` và workflow CI hiện còn rỗng tại commit được kiểm tra.
 - Thư mục workflow đang nằm dưới thư mục dự án con; cần cấu hình tại `.github/workflows/` ở gốc repository nếu xây dựng GitHub Actions.
 - Chưa có xác nhận đóng gói/phát hành ứng dụng lên Google Play hoặc App Store.
-- Trong repo hiện có file môi trường được theo dõi và giá trị cấu hình DB mặc định trong mã. Trước khi chia sẻ hoặc triển khai, rà soát, đưa cấu hình riêng ra môi trường và đổi thông tin bí mật nếu đã lộ; không sao chép chúng vào README.
+- Repository có file `.env` được Git theo dõi tại thư mục gốc. **Cần kiểm tra ngay xem file có chứa thông tin bí mật hay không**; nếu có, thu hồi/đổi các khóa và mật khẩu đã lộ, dùng biến môi trường phía server, đồng thời ngăn việc commit lại. Không đưa secret vào README.
 
 ## Xử lý lỗi thường gặp
 
@@ -409,7 +427,7 @@ Proxy API hiện được khai báo ở `server.proxy` cho dev. Khi preview ho�
 | Thiếu `dotenv` hoặc `bcryptjs` | Chạy `npm --prefix db install` |
 | `Missing PGHOST; configure db/.env` | Tạo/sửa `db/.env`, kiểm tra đủ 5 biến PG |
 | Database/role không tồn tại | Chạy setup bằng tài khoản PostgreSQL có quyền phù hợp |
-| `permission denied` | Kiểm tra `guide_app`, permissions và migration cấp quyền |
+| `permission denied` | Kiểm tra `guide_app`, permissions và migration cấp quyền, đặc biệt `device_sessions` và `offline_package_downloads` |
 | Thiếu cột `session_id`, `listened_seconds` hoặc `completed` | Chạy migration `20261030_mobile_listening.sql` |
 | Không nhận lệnh `psql` | Thêm PostgreSQL bin vào PATH hoặc dùng đường dẫn đầy đủ |
 | Điện thoại không vào được API | Dùng IP LAN thay localhost, kiểm tra mạng và firewall |
@@ -422,6 +440,8 @@ Proxy API hiện được khai báo ở `server.proxy` cho dev. Khi preview ho�
 
 
 
-## G01 — Upload ảnh và audio
+## Upload ảnh và audio (Manager)
 
-Manager có thể chọn tệp ảnh bìa, ảnh thư viện và audio VI/EN; xem tiến trình, hủy và thử lại khi lỗi. Xem [hướng dẫn cấu hình local/Supabase và API upload](multilingual-audio-guide/docs/media-upload.md).
+Manager có thể chọn tệp ảnh bìa, ảnh thư viện và audio VI/EN; xem tiến trình, hủy và thử lại khi lỗi. API upload chỉ chấp nhận Manager đang hoạt động và địa danh được phân công, đồng thời phụ thuộc cấu hình storage. Xem [hướng dẫn cấu hình local/Supabase và API upload](multilingual-audio-guide/docs/media-upload.md).
+
+> **Ghi chú về nhánh:** README không bao gồm những thay đổi của các commit tính năng chưa merge vào `main`. Hãy kiểm tra `git branch --show-current` trước khi chạy lệnh hoặc đối chiếu giao diện.
