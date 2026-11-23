@@ -8,6 +8,8 @@ import { pool, query } from './database.js';
 import { listLandmarks, getLandmark } from './landmark-repository.js';
 import { storageRoot, validateStorageKey } from './storage.js';
 import { receiveMedia } from './media-upload.js';
+
+import { checkPOI, createPOI } from './poi-service.js';
 import {
   createManagerAccount,
   getAdminBootstrap,

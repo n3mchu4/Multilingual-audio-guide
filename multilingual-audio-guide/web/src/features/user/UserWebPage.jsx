@@ -3,6 +3,7 @@ import { API_BASE, getVisitorId } from '../../services/analytics';
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useGuideState } from "../../hooks/useGuideState";
 import usePresence from "../../hooks/usePresence";
+import { getNearbyPOIs } from './poiNearby';
 import {
   SpotList,
   QuickList,
