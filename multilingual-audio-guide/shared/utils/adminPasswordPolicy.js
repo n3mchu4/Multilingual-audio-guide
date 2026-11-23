@@ -15,3 +15,5 @@ export function validateAdminNewPassword(currentPassword, nextPassword) {
   if (currentPassword === nextPassword) return 'Mật khẩu mới phải khác mật khẩu hiện tại.';
   return null;
 }
+
+// main
